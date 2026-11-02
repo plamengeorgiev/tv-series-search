@@ -90,7 +90,7 @@ export function SearchPage() {
 
   return (
     <>
-      <h1>Search TV shows</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Search TV shows</h1>
       <SearchInput value={query} onChange={handleQueryChange} />
       <SlowConnectionNotice isLoading={isLoadingResults} />
       {isWaitingForConnection && (

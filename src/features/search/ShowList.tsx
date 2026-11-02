@@ -7,7 +7,8 @@ interface ShowListProps {
 
 export function ShowList({ results }: ShowListProps) {
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    // auto-fill rather than fixed breakpoints, so the column count follows the space actually available.
+    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] sm:gap-4">
       {results.map(({ show }) => (
         <li key={show.id}>
           <ShowCard show={show} />
