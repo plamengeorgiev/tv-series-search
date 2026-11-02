@@ -15,11 +15,11 @@ export function CastList({ cast }: CastListProps) {
 
   return (
     <section aria-labelledby="cast-heading" className="flex flex-col gap-3">
-      <h2 id="cast-heading" className="text-xl font-semibold text-gray-900">
+      <h2 id="cast-heading" className="text-xl font-semibold text-ink">
         Cast
       </h2>
       {cast.length === 0 ? (
-        <p className="text-gray-600">No cast information available.</p>
+        <p className="text-ink-muted">No cast information available.</p>
       ) : (
         <ul id="cast-list" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {visibleCast.map(({ person, character }) => (
@@ -38,13 +38,13 @@ export function CastList({ cast }: CastListProps) {
               ) : (
                 <div
                   aria-hidden="true"
-                  className="flex aspect-[210/295] w-full items-center justify-center rounded bg-gray-100 text-xs text-gray-500"
+                  className="flex aspect-[210/295] w-full items-center justify-center rounded bg-surface-muted text-xs text-ink-muted"
                 >
                   No image
                 </div>
               )}
-              <p className="text-sm font-medium text-gray-900">{person.name}</p>
-              <p className="text-sm text-gray-600">as {character.name}</p>
+              <p className="text-sm font-medium text-ink">{person.name}</p>
+              <p className="text-sm text-ink-muted">as {character.name}</p>
             </li>
           ))}
         </ul>
@@ -57,7 +57,7 @@ export function CastList({ cast }: CastListProps) {
           onClick={() => {
             setShowAll((current) => !current)
           }}
-          className="self-start rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="self-start rounded border border-line-strong px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {showAll ? 'Show fewer' : `Show all ${String(cast.length)} cast members`}
         </button>

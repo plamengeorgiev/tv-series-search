@@ -13,10 +13,10 @@ export function RouteErrorBoundary() {
   return (
     <div
       role="alert"
-      className="flex flex-col items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-8 text-center"
+      className="flex flex-col items-center gap-3 rounded-lg border border-danger-line bg-danger-surface px-4 py-8 text-center"
     >
-      <h1 className="font-semibold text-red-800">Something went wrong</h1>
-      <p className="text-sm text-red-700">
+      <h1 className="font-semibold text-danger-ink">Something went wrong</h1>
+      <p className="text-sm text-danger-ink">
         An unexpected error occurred. Try reloading the page, or go back to search.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
@@ -25,11 +25,11 @@ export function RouteErrorBoundary() {
           onClick={() => {
             window.location.reload()
           }}
-          className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+          className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-on-danger hover:bg-danger-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
         >
           Reload page
         </button>
-        <Link to="/" className="text-sm font-medium text-red-800 underline">
+        <Link to="/" className="text-sm font-medium text-danger-ink underline">
           Back to search
         </Link>
       </div>

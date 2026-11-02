@@ -40,7 +40,9 @@ export function SearchPage() {
 
   function renderResults() {
     if (!hasQuery) {
-      return <p className="py-12 text-center text-gray-600">Type a show name to start searching.</p>
+      return (
+        <p className="py-12 text-center text-ink-muted">Type a show name to start searching.</p>
+      )
     }
     if (error) {
       return (
@@ -59,7 +61,7 @@ export function SearchPage() {
     }
     if (results.length === 0) {
       return (
-        <p className="py-12 text-center text-gray-600">
+        <p className="py-12 text-center text-ink-muted">
           No shows found for “{debouncedQuery.trim()}”.
         </p>
       )
@@ -94,7 +96,7 @@ export function SearchPage() {
       {isWaitingForConnection && (
         <p
           role="status"
-          className="rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-center text-sm text-gray-700"
+          className="rounded-md border border-line bg-surface-muted px-4 py-2 text-center text-sm text-ink-muted"
         >
           You’re offline. We’ll search for “{debouncedQuery.trim()}” when your connection is back.
         </p>

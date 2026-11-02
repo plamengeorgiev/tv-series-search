@@ -63,7 +63,7 @@ function BackToResults() {
   const location = useLocation()
   const navigate = useNavigate()
   const returnState = getSearchReturnState(location.state)
-  const className = 'self-start text-blue-700 underline hover:text-blue-900'
+  const className = 'self-start text-accent underline hover:text-accent-strong'
 
   // Deep links and refreshes have no search to return to.
   if (!returnState) {
@@ -98,9 +98,9 @@ function BackToResults() {
 function ShowNotFound() {
   return (
     <div className="flex flex-col items-center gap-3 py-12 text-center">
-      <h1 className="text-2xl font-bold text-gray-900">Show not found</h1>
-      <p className="text-gray-600">This show doesn’t exist or may have been removed.</p>
-      <Link to="/" className="text-blue-700 underline hover:text-blue-900">
+      <h1 className="text-2xl font-bold text-ink">Show not found</h1>
+      <p className="text-ink-muted">This show doesn’t exist or may have been removed.</p>
+      <Link to="/" className="text-accent underline hover:text-accent-strong">
         Back to search
       </Link>
     </div>
@@ -122,19 +122,22 @@ function ShowDetailsView({ show }: { show: ShowDetails }) {
       ) : (
         <div
           aria-hidden="true"
-          className="flex aspect-[210/295] w-48 items-center justify-center rounded-lg bg-gray-100 text-sm text-gray-500"
+          className="flex aspect-[210/295] w-48 items-center justify-center rounded-lg bg-surface-muted text-sm text-ink-muted"
         >
           No image
         </div>
       )}
 
       <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold text-gray-900">{show.name}</h1>
+        <h1 className="text-3xl font-bold text-ink">{show.name}</h1>
 
         {show.genres.length > 0 && (
           <ul aria-label="Genres" className="flex flex-wrap gap-2">
             {show.genres.map((genre) => (
-              <li key={genre} className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+              <li
+                key={genre}
+                className="rounded-full bg-surface-muted px-3 py-1 text-sm text-ink-muted"
+              >
                 {genre}
               </li>
             ))}
@@ -142,38 +145,38 @@ function ShowDetailsView({ show }: { show: ShowDetails }) {
         )}
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-          <dt className="font-medium text-gray-600">Status</dt>
+          <dt className="font-medium text-ink-muted">Status</dt>
           <dd>{show.status}</dd>
           {show.premiered && (
             <>
-              <dt className="font-medium text-gray-600">Premiered</dt>
+              <dt className="font-medium text-ink-muted">Premiered</dt>
               <dd>{formatDate(show.premiered)}</dd>
             </>
           )}
           {show.ended && (
             <>
-              <dt className="font-medium text-gray-600">Ended</dt>
+              <dt className="font-medium text-ink-muted">Ended</dt>
               <dd>{formatDate(show.ended)}</dd>
             </>
           )}
           {channel && (
             <>
-              <dt className="font-medium text-gray-600">Network</dt>
+              <dt className="font-medium text-ink-muted">Network</dt>
               <dd>{channel.name}</dd>
             </>
           )}
-          <dt className="font-medium text-gray-600">Rating</dt>
+          <dt className="font-medium text-ink-muted">Rating</dt>
           <dd>{rating === null ? 'Not rated' : `${String(rating)} / 10`}</dd>
         </dl>
 
         {show.summary ? (
           <div
-            className="flex flex-col gap-2 text-gray-800"
+            className="flex flex-col gap-2 text-ink"
             // The summary is HTML from the API, so it's sanitized before rendering.
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(show.summary) }}
           />
         ) : (
-          <p className="text-gray-600">No summary available.</p>
+          <p className="text-ink-muted">No summary available.</p>
         )}
 
         {show.officialSite && (
@@ -181,7 +184,7 @@ function ShowDetailsView({ show }: { show: ShowDetails }) {
             href={show.officialSite}
             target="_blank"
             rel="noreferrer"
-            className="self-start text-blue-700 underline hover:text-blue-900"
+            className="self-start text-accent underline hover:text-accent-strong"
           >
             Official site
           </a>

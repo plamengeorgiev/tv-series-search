@@ -15,7 +15,7 @@ export function SlowConnectionNotice({ isLoading }: SlowConnectionNoticeProps) {
   return (
     <p
       role="status"
-      className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm text-amber-800"
+      className="rounded-md border border-warning-line bg-warning-surface px-4 py-2 text-center text-sm text-warning-ink"
     >
       This is taking longer than usual…
     </p>

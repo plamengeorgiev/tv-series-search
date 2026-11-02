@@ -20,14 +20,14 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
   return (
     <div
       role="alert"
-      className="flex flex-col items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-8 text-center"
+      className="flex flex-col items-center gap-3 rounded-lg border border-danger-line bg-danger-surface px-4 py-8 text-center"
     >
-      <p className="font-semibold text-red-800">Something went wrong</p>
-      <p className="text-sm text-red-700">{describeError(error)}</p>
+      <p className="font-semibold text-danger-ink">Something went wrong</p>
+      <p className="text-sm text-danger-ink">{describeError(error)}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+        className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-on-danger hover:bg-danger-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
       >
         Retry
       </button>
