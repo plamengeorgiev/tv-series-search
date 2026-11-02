@@ -4,6 +4,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
+import { reportError } from '../../lib/reportError'
 import { searchResultsFixture } from '../../test/fixtures'
 import { renderWithProviders } from '../../test/renderWithProviders'
 import { server } from '../../test/server'
@@ -128,6 +129,25 @@ describe('SearchPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('reports the failure for developers while showing the user only a generic message', async () => {
+    server.use(http.get(searchUrl, () => new HttpResponse(null, { status: 500 })))
+    renderSearchPage('/?q=dome')
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/couldn’t load this right now/)
+    expect(alert).not.toHaveTextContent(/500|TVmaze/)
+    expect(reportError).toHaveBeenCalledOnce()
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'server', status: 500 }),
+      expect.objectContaining({
+        source: 'query',
+        type: 'server',
+        status: 500,
+        queryKey: ['shows', 'search', 'dome'],
+      }),
+    )
   })
 
   it('searches immediately for a query in the initial URL', async () => {

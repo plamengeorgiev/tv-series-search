@@ -1,7 +1,15 @@
-import { Link } from 'react-router'
+import { useEffect } from 'react'
+import { Link, useRouteError } from 'react-router'
+import { reportError } from '../lib/reportError'
 
 // A render crash is a bug rather than something the user can fix, so the message stays generic.
 export function RouteErrorBoundary() {
+  const error = useRouteError()
+
+  useEffect(() => {
+    reportError(error, { source: 'route' })
+  }, [error])
+
   return (
     <div
       role="alert"
