@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import type { ShowDetails } from '../../api/schemas'
 import { formatDate } from '../../lib/formatDate'
 import { DetailsSection } from './DetailsSection'
+import { getChannelName } from './getChannelName'
 
 interface ShowFactsProps {
   show: ShowDetails
@@ -10,12 +11,11 @@ interface ShowFactsProps {
 
 /** The "Details" card: status, dates, network and language, leaving out whatever is unknown. */
 export function ShowFacts({ show, className }: ShowFactsProps) {
-  const channel = show.network ?? show.webChannel
   const facts: [label: string, value: string | null][] = [
     ['Status', show.status],
     ['Premiered', show.premiered && formatDate(show.premiered)],
     ['Ended', show.ended && formatDate(show.ended)],
-    ['Network', channel?.name ?? null],
+    ['Network', getChannelName(show)],
     ['Language', show.language],
   ]
 

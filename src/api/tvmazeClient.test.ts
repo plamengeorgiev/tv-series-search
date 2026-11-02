@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { showDetailsFixture } from '../test/fixtures'
 import { server } from '../test/server'
-import { ApiError, getShow, searchShows, TVMAZE_BASE_URL } from './tvmazeClient'
+import { ApiError, getShow, isApiError, searchShows, TVMAZE_BASE_URL } from './tvmazeClient'
 
 const searchUrl = `${TVMAZE_BASE_URL}/search/shows`
 const showUrl = `${TVMAZE_BASE_URL}/shows/:id`
@@ -120,5 +120,22 @@ describe('error mapping', () => {
 
     expect(error).not.toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ name: 'AbortError' })
+  })
+})
+
+describe('isApiError', () => {
+  it('matches an ApiError of one of the given types', () => {
+    const error = new ApiError('rate-limited', 'Too many requests')
+
+    expect(isApiError(error, 'rate-limited')).toBe(true)
+    expect(isApiError(error, 'network', 'rate-limited')).toBe(true)
+  })
+
+  it('does not match an ApiError of another type', () => {
+    expect(isApiError(new ApiError('server', 'Server error'), 'not-found')).toBe(false)
+  })
+
+  it('does not match other errors', () => {
+    expect(isApiError(new Error('Boom'), 'network')).toBe(false)
   })
 })

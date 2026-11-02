@@ -1,6 +1,6 @@
 import { useParams } from 'react-router'
 import { useShowDetails } from '../../api/queries'
-import { ApiError } from '../../api/tvmazeClient'
+import { isApiError } from '../../api/tvmazeClient'
 import { ErrorState } from '../../components/ErrorState'
 import { NotFound } from '../../components/NotFound'
 import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
@@ -29,7 +29,7 @@ function ShowDetailsLoader({ id }: { id: number }) {
   const { data: show, error, isPending, refetch } = useShowDetails(id)
 
   // "Show not found" has its own link back, so it doesn't get the back link above it.
-  if (error instanceof ApiError && error.type === 'not-found') return <ShowNotFound />
+  if (isApiError(error, 'not-found')) return <ShowNotFound />
 
   function renderContent() {
     if (error) {

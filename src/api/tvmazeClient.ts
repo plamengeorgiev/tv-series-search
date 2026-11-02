@@ -22,6 +22,11 @@ export class ApiError extends Error {
   }
 }
 
+/** Whether `error` is an ApiError of one of the given types. */
+export function isApiError(error: unknown, ...types: ApiErrorType[]): boolean {
+  return error instanceof ApiError && types.includes(error.type)
+}
+
 function typeForStatus(status: number): ApiErrorType {
   if (status === 404) return 'not-found'
   if (status === 429) return 'rate-limited'

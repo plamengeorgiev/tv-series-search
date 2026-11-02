@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router'
 import type { Show } from '../../api/schemas'
 import { Poster } from '../../components/Poster'
+import { getYear } from '../../lib/formatDate'
 import type { SearchReturnState } from '../../lib/searchReturnState'
 
 interface ShowCardProps {
@@ -8,7 +9,7 @@ interface ShowCardProps {
 }
 
 export function ShowCard({ show }: ShowCardProps) {
-  const year = show.premiered?.slice(0, 4)
+  const year = getYear(show.premiered)
   const rating = show.rating.average
   const { search } = useLocation()
   const returnState: SearchReturnState = { fromSearch: search }

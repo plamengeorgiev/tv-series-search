@@ -1,14 +1,12 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { ApiError, getShow, searchShows, type ApiErrorType } from './tvmazeClient'
+import { getShow, isApiError, searchShows, type ApiErrorType } from './tvmazeClient'
 
 const MAX_RETRIES = 3
 // Other errors (404s, bad data) would fail the same way on every attempt.
-const retryableErrorTypes = new Set<ApiErrorType>(['network', 'rate-limited', 'server'])
+const retryableErrorTypes: ApiErrorType[] = ['network', 'rate-limited', 'server']
 
 function retryTransientErrors(failureCount: number, error: Error): boolean {
-  return (
-    failureCount < MAX_RETRIES && error instanceof ApiError && retryableErrorTypes.has(error.type)
-  )
+  return failureCount < MAX_RETRIES && isApiError(error, ...retryableErrorTypes)
 }
 
 export const showKeys = {

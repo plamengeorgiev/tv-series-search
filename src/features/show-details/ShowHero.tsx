@@ -1,5 +1,7 @@
 import type { ShowDetails } from '../../api/schemas'
 import { Poster } from '../../components/Poster'
+import { getYear } from '../../lib/formatDate'
+import { getChannelName } from './getChannelName'
 
 interface ShowHeroProps {
   show: ShowDetails
@@ -8,12 +10,12 @@ interface ShowHeroProps {
 // e.g. "2013–2015 · Ended · CBS", or "2019– · Running" for a show still on air.
 function formatMetaLine(show: ShowDetails): string {
   const parts: string[] = []
-  const startYear = show.premiered?.slice(0, 4)
-  const endYear = show.ended?.slice(0, 4)
+  const startYear = getYear(show.premiered)
+  const endYear = getYear(show.ended)
   if (startYear) parts.push(startYear === endYear ? startYear : `${startYear}–${endYear ?? ''}`)
   parts.push(show.status)
-  const channel = show.network ?? show.webChannel
-  if (channel) parts.push(channel.name)
+  const channelName = getChannelName(show)
+  if (channelName) parts.push(channelName)
   return parts.join(' · ')
 }
 
