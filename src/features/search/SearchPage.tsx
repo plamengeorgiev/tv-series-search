@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router'
 import { useShowSearch } from '../../api/queries'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { SearchInput } from './SearchInput'
+import { ShowList } from './ShowList'
 
 // Long enough to skip intermediate keystrokes, which keeps us under TVmaze's rate limit.
 const SEARCH_DEBOUNCE_MS = 300
@@ -11,7 +12,9 @@ export function SearchPage() {
   const query = searchParams.get('q') ?? ''
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS)
 
-  useShowSearch(debouncedQuery)
+  const { data: results } = useShowSearch(debouncedQuery)
+  // keepPreviousData would otherwise keep showing the last results after the input is cleared.
+  const hasQuery = query.trim() !== ''
 
   function handleQueryChange(value: string) {
     setSearchParams(
@@ -29,6 +32,7 @@ export function SearchPage() {
     <>
       <h1>Search TV shows</h1>
       <SearchInput value={query} onChange={handleQueryChange} />
+      {hasQuery && results && <ShowList results={results} />}
     </>
   )
 }

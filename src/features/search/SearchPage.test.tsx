@@ -72,6 +72,25 @@ describe('SearchPage', () => {
     })
   })
 
+  it('renders a card for each result, linking to its details page', async () => {
+    renderSearchPage('/?q=dome')
+
+    const links = await screen.findAllByRole('link')
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/shows/1', '/shows/99999'])
+    expect(screen.getByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Unknown Pilot' })).toBeInTheDocument()
+  })
+
+  it('hides the results when the input is cleared', async () => {
+    const user = userEvent.setup()
+    renderSearchPage('/?q=dome')
+    await screen.findByRole('list')
+
+    await user.clear(screen.getByRole('searchbox', { name: 'Show name' }))
+
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+  })
+
   it('searches immediately for a query in the initial URL', async () => {
     const queries = recordSearchQueries()
     renderSearchPage('/?q=dome')
