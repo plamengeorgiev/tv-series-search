@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import { useLocation } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
@@ -8,6 +8,8 @@ import { searchResultsFixture } from '../../test/fixtures'
 import { renderWithProviders } from '../../test/renderWithProviders'
 import { server } from '../../test/server'
 import { SearchPage } from './SearchPage'
+
+const searchUrl = `${TVMAZE_BASE_URL}/search/shows`
 
 function LocationProbe() {
   const location = useLocation()
@@ -27,7 +29,7 @@ function renderSearchPage(route = '/') {
 function recordSearchQueries() {
   const queries: (string | null)[] = []
   server.use(
-    http.get(`${TVMAZE_BASE_URL}/search/shows`, ({ request }) => {
+    http.get(searchUrl, ({ request }) => {
       queries.push(new URL(request.url).searchParams.get('q'))
       return HttpResponse.json(searchResultsFixture)
     }),
@@ -89,6 +91,42 @@ describe('SearchPage', () => {
     await user.clear(screen.getByRole('searchbox', { name: 'Show name' }))
 
     expect(screen.queryByRole('list')).not.toBeInTheDocument()
+  })
+
+  it('prompts for a search when there is no query', () => {
+    renderSearchPage()
+
+    expect(screen.getByText('Type a show name to start searching.')).toBeInTheDocument()
+    expect(screen.queryByText('Searching…')).not.toBeInTheDocument()
+  })
+
+  it('shows a loading state while the search is in flight', async () => {
+    server.use(http.get(searchUrl, () => delay('infinite')))
+    renderSearchPage('/?q=dome')
+
+    expect(await screen.findByText('Searching…')).toHaveAttribute('role', 'status')
+  })
+
+  it('says so when no shows match the query', async () => {
+    server.use(http.get(searchUrl, () => HttpResponse.json([])))
+    renderSearchPage('/?q=xyzzy')
+
+    expect(await screen.findByText('No shows found for “xyzzy”.')).toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+  })
+
+  it('shows an error with a Retry button that searches again', async () => {
+    server.use(http.get(searchUrl, () => new HttpResponse(null, { status: 500 })))
+    const user = userEvent.setup()
+    renderSearchPage('/?q=dome')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn’t load this right now/)
+
+    server.use(http.get(searchUrl, () => HttpResponse.json(searchResultsFixture)))
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('searches immediately for a query in the initial URL', async () => {
