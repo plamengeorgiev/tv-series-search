@@ -1,5 +1,6 @@
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import type { Show } from '../../api/schemas'
+import type { SearchReturnState } from '../../lib/searchReturnState'
 
 interface ShowCardProps {
   show: Show
@@ -8,10 +9,13 @@ interface ShowCardProps {
 export function ShowCard({ show }: ShowCardProps) {
   const year = show.premiered?.slice(0, 4)
   const rating = show.rating.average
+  const { search } = useLocation()
+  const returnState: SearchReturnState = { fromSearch: search }
 
   return (
     <Link
       to={`/shows/${String(show.id)}`}
+      state={returnState}
       className="flex h-full gap-4 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:border-gray-400 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
     >
       {show.image ? (

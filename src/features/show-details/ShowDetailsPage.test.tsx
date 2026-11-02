@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
+import { useLocation } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import App from '../../App'
 import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
@@ -310,8 +311,70 @@ describe('deep links to show details', () => {
     const user = userEvent.setup()
     renderWithProviders(<App />, { route: '/shows/424242' })
 
-    await user.click(await screen.findByRole('link', { name: 'Back to search' }))
+    await screen.findByRole('heading', { name: 'Show not found' })
+    await user.click(screen.getByRole('link', { name: 'Back to search' }))
 
     expect(screen.getByRole('heading', { name: 'Search TV shows' })).toBeInTheDocument()
+  })
+})
+
+describe('back-to-results navigation', () => {
+  function LocationProbe() {
+    const location = useLocation()
+    return (
+      <output data-testid="location" data-key={location.key}>
+        {location.pathname + location.search}
+      </output>
+    )
+  }
+
+  function renderApp(route: string) {
+    return renderWithProviders(
+      <>
+        <App />
+        <LocationProbe />
+      </>,
+      { route },
+    )
+  }
+
+  it('goes back through history to the same search results', async () => {
+    const user = userEvent.setup()
+    renderApp('/?q=dome')
+    const searchKey = screen.getByTestId('location').dataset.key
+
+    await user.click(await screen.findByRole('link', { name: /Under the Dome/ }))
+    const backLink = await screen.findByRole('link', { name: 'Back to results' })
+    expect(backLink).toHaveAttribute('href', '/?q=dome')
+    await user.click(backLink)
+
+    expect(screen.getByRole('searchbox', { name: 'Show name' })).toHaveValue('dome')
+    expect(screen.getByTestId('location')).toHaveTextContent('/?q=dome')
+    // The same history entry as before, not a new one pushed on top of the details page.
+    expect(screen.getByTestId('location').dataset.key).toBe(searchKey)
+  })
+
+  it('shows the back link while the show is loading', async () => {
+    server.use(http.get(showUrl, () => delay('infinite')))
+    const user = userEvent.setup()
+    renderApp('/?q=dome')
+
+    await user.click(await screen.findByRole('link', { name: /Under the Dome/ }))
+
+    expect(await screen.findByText('Loading show…')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to results' })).toBeInTheDocument()
+  })
+
+  it('links to search when the details page was opened directly', async () => {
+    const user = userEvent.setup()
+    renderApp('/shows/1')
+
+    await screen.findByRole('heading', { name: 'Under the Dome' })
+    const backLink = screen.getByRole('link', { name: 'Back to search' })
+    expect(backLink).toHaveAttribute('href', '/')
+    await user.click(backLink)
+
+    expect(screen.getByRole('heading', { name: 'Search TV shows' })).toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/)
   })
 })

@@ -1,4 +1,5 @@
-import { Link, useParams } from 'react-router'
+import type { MouseEvent } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { useShowDetails } from '../../api/queries'
 import type { ShowDetails } from '../../api/schemas'
 import { ApiError } from '../../api/tvmazeClient'
@@ -6,6 +7,7 @@ import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
 import { formatDate } from '../../lib/formatDate'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
+import { getSearchReturnState } from '../../lib/searchReturnState'
 import { CastList } from './CastList'
 import { SeasonList } from './SeasonList'
 
@@ -29,20 +31,66 @@ export function ShowDetailsPage() {
 function ShowDetailsLoader({ id }: { id: number }) {
   const { data: show, error, isPending, refetch } = useShowDetails(id)
 
+  // "Show not found" has its own link back, so it doesn't get the back link above it.
   if (error instanceof ApiError && error.type === 'not-found') return <ShowNotFound />
-  if (error) {
+
+  function renderContent() {
+    if (error) {
+      return (
+        <ErrorState
+          error={error}
+          onRetry={() => {
+            void refetch()
+          }}
+        />
+      )
+    }
+    if (isPending) return <LoadingState message="Loading show…" />
+    return <ShowDetailsView show={show} />
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <BackToResults />
+      {renderContent()}
+    </div>
+  )
+}
+
+function BackToResults() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const returnState = getSearchReturnState(location.state)
+  const className = 'self-start text-blue-700 underline hover:text-blue-900'
+
+  // Deep links and refreshes have no search to return to.
+  if (!returnState) {
     return (
-      <ErrorState
-        error={error}
-        onRetry={() => {
-          void refetch()
-        }}
-      />
+      <Link to="/" className={className}>
+        <span aria-hidden="true">← </span>Back to search
+      </Link>
     )
   }
-  if (isPending) return <LoadingState message="Loading show…" />
 
-  return <ShowDetailsView show={show} />
+  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
+    // Let modified clicks open the results in a new tab through the href.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return
+    }
+    // Going back, rather than pushing a new entry, keeps the search page's history and scroll position.
+    event.preventDefault()
+    void navigate(-1)
+  }
+
+  return (
+    <Link
+      to={{ pathname: '/', search: returnState.fromSearch }}
+      onClick={handleClick}
+      className={className}
+    >
+      <span aria-hidden="true">← </span>Back to results
+    </Link>
+  )
 }
 
 function ShowNotFound() {
