@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
-import { showFixture } from '../../test/fixtures'
+import { showDetailsFixture, showFixture } from '../../test/fixtures'
 import { renderWithProviders } from '../../test/renderWithProviders'
 import { server } from '../../test/server'
 import { ShowDetailsPage } from './ShowDetailsPage'
@@ -59,7 +59,7 @@ describe('ShowDetailsPage', () => {
     server.use(
       http.get(showUrl, () =>
         HttpResponse.json({
-          ...showFixture,
+          ...showDetailsFixture,
           summary: '<p>Safe text</p><script>window.hacked = true</script>',
         }),
       ),
@@ -94,13 +94,151 @@ describe('ShowDetailsPage', () => {
   it('falls back to the web channel when there is no network', async () => {
     server.use(
       http.get(showUrl, () =>
-        HttpResponse.json({ ...showFixture, network: null, webChannel: { name: 'Netflix' } }),
+        HttpResponse.json({
+          ...showDetailsFixture,
+          network: null,
+          webChannel: { name: 'Netflix' },
+        }),
       ),
     )
     renderDetailsPage(1)
 
     await screen.findByRole('heading', { name: 'Under the Dome' })
     expect(getDetail('Network')).toHaveTextContent('Netflix')
+  })
+
+  it('lists the seasons with their episode counts and dates', async () => {
+    renderDetailsPage(1)
+
+    const seasons = within(await screen.findByRole('region', { name: 'Seasons' })).getAllByRole(
+      'listitem',
+    )
+    expect(seasons).toHaveLength(3)
+    expect(seasons[0]).toHaveTextContent('Season 1')
+    expect(seasons[0]).toHaveTextContent('13 episodes · Jun 24, 2013 – Sep 16, 2013')
+  })
+
+  it('shows season names and leaves out unknown details for upcoming seasons', async () => {
+    server.use(
+      http.get(showUrl, () =>
+        HttpResponse.json({
+          ...showDetailsFixture,
+          _embedded: {
+            ...showDetailsFixture._embedded,
+            seasons: [
+              {
+                id: 1,
+                number: 1,
+                name: 'Book One',
+                episodeOrder: 1,
+                premiereDate: '2025-01-05',
+                endDate: null,
+              },
+              {
+                id: 2,
+                number: 2,
+                name: '',
+                episodeOrder: null,
+                premiereDate: null,
+                endDate: null,
+              },
+            ],
+          },
+        }),
+      ),
+    )
+    renderDetailsPage(1)
+
+    expect(await screen.findByRole('heading', { name: 'Season 1: Book One' })).toBeInTheDocument()
+    expect(screen.getByText('1 episode · From Jan 5, 2025')).toBeInTheDocument()
+    // Season 2 has nothing known yet, so only its heading is rendered.
+    expect(screen.getByRole('heading', { name: 'Season 2' }).parentElement).toHaveTextContent(
+      /^Season 2$/,
+    )
+  })
+
+  it('lists the cast with the characters they play', async () => {
+    renderDetailsPage(1)
+
+    const cast = within(await screen.findByRole('region', { name: 'Cast' })).getAllByRole(
+      'listitem',
+    )
+    expect(cast).toHaveLength(3)
+    expect(cast[0]).toHaveTextContent('Mike Vogel')
+    expect(cast[0]).toHaveTextContent('as Dale "Barbie" Barbara')
+    expect(cast[0]?.querySelector('img')).toHaveAttribute(
+      'src',
+      showDetailsFixture._embedded.cast[0].person.image.medium,
+    )
+  })
+
+  it('shows a placeholder for cast members without a photo', async () => {
+    const [castMember] = showDetailsFixture._embedded.cast
+    server.use(
+      http.get(showUrl, () =>
+        HttpResponse.json({
+          ...showDetailsFixture,
+          _embedded: {
+            ...showDetailsFixture._embedded,
+            cast: [{ ...castMember, person: { ...castMember.person, image: null } }],
+          },
+        }),
+      ),
+    )
+    renderDetailsPage(1)
+
+    const cast = await screen.findByRole('region', { name: 'Cast' })
+    expect(within(cast).getByText('Mike Vogel')).toBeInTheDocument()
+    expect(within(cast).getByText('No image')).toBeInTheDocument()
+    expect(cast.querySelector('img')).toBeNull()
+  })
+
+  it('shows the first cast members and reveals the rest on request', async () => {
+    const [castMember] = showDetailsFixture._embedded.cast
+    const largeCast = Array.from({ length: 15 }, (_, index) => ({
+      person: { ...castMember.person, id: index, name: `Actor ${String(index + 1)}` },
+      character: { id: index, name: `Character ${String(index + 1)}` },
+    }))
+    server.use(
+      http.get(showUrl, () =>
+        HttpResponse.json({
+          ...showDetailsFixture,
+          _embedded: { ...showDetailsFixture._embedded, cast: largeCast },
+        }),
+      ),
+    )
+    const user = userEvent.setup()
+    renderDetailsPage(1)
+
+    const cast = await screen.findByRole('region', { name: 'Cast' })
+    expect(within(cast).getAllByRole('listitem')).toHaveLength(12)
+    expect(within(cast).queryByText('Actor 13')).not.toBeInTheDocument()
+
+    const toggle = within(cast).getByRole('button', { name: 'Show all 15 cast members' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await user.click(toggle)
+
+    expect(within(cast).getAllByRole('listitem')).toHaveLength(15)
+    expect(within(cast).getByText('Actor 15')).toBeInTheDocument()
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(within(cast).getByRole('button', { name: 'Show fewer' }))
+
+    expect(within(cast).getAllByRole('listitem')).toHaveLength(12)
+  })
+
+  it('has no show-all button when the whole cast already fits', async () => {
+    renderDetailsPage(1)
+
+    const cast = await screen.findByRole('region', { name: 'Cast' })
+    expect(within(cast).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('says when there is no cast or season information', async () => {
+    renderDetailsPage(99999)
+
+    expect(await screen.findByText('No cast information available.')).toBeInTheDocument()
+    expect(screen.getByText('No season information available.')).toBeInTheDocument()
   })
 
   it('shows a loading state while the show is in flight', async () => {

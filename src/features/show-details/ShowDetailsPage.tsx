@@ -3,14 +3,10 @@ import { useShowDetails } from '../../api/queries'
 import type { ShowDetails } from '../../api/schemas'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
+import { formatDate } from '../../lib/formatDate'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
-
-const dateFormatter = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' })
-
-// TVmaze dates are plain YYYY-MM-DD, so format them in UTC to avoid shifting by a day.
-function formatDate(date: string): string {
-  return dateFormatter.format(new Date(`${date}T00:00:00Z`))
-}
+import { CastList } from './CastList'
+import { SeasonList } from './SeasonList'
 
 export function ShowDetailsPage() {
   const { id } = useParams()
@@ -111,6 +107,9 @@ function ShowDetailsView({ show }: { show: ShowDetails }) {
           </a>
         )}
       </div>
+
+      <SeasonList seasons={show._embedded.seasons} />
+      <CastList cast={show._embedded.cast} />
     </article>
   )
 }

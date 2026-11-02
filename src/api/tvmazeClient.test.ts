@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
+import { showDetailsFixture } from '../test/fixtures'
 import { server } from '../test/server'
 import { ApiError, getShow, searchShows, TVMAZE_BASE_URL } from './tvmazeClient'
 
@@ -42,6 +43,26 @@ describe('getShow', () => {
     const show = await getShow(1)
 
     expect(show).toMatchObject({ id: 1, name: 'Under the Dome', network: { name: 'CBS' } })
+  })
+
+  it('embeds the cast and seasons in the same request', async () => {
+    let embeds: string[] = []
+    server.use(
+      http.get(showUrl, ({ request }) => {
+        embeds = new URL(request.url).searchParams.getAll('embed[]')
+        return HttpResponse.json(showDetailsFixture)
+      }),
+    )
+
+    const show = await getShow(1)
+
+    expect(embeds).toEqual(['cast', 'seasons'])
+    expect(show._embedded.cast.map(({ person }) => person.name)).toEqual([
+      'Mike Vogel',
+      'Rachelle Lefevre',
+      'Alexander Koch',
+    ])
+    expect(show._embedded.seasons.map((season) => season.number)).toEqual([1, 2, 3])
   })
 })
 

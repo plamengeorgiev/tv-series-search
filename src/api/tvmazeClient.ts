@@ -74,5 +74,9 @@ export function searchShows(query: string, signal?: AbortSignal): Promise<Search
 }
 
 export function getShow(id: number, signal?: AbortSignal): Promise<ShowDetails> {
-  return request(new URL(`/shows/${String(id)}`, TVMAZE_BASE_URL), showDetailsSchema, signal)
+  const url = new URL(`/shows/${String(id)}`, TVMAZE_BASE_URL)
+  // Embedding saves two extra requests against the rate limit.
+  url.searchParams.append('embed[]', 'cast')
+  url.searchParams.append('embed[]', 'seasons')
+  return request(url, showDetailsSchema, signal)
 }
