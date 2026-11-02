@@ -20,6 +20,8 @@ describe('routes', () => {
     renderApp('/no/such/page')
 
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
+    expect(screen.getByText('There’s nothing at this address.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to search' })).toHaveAttribute('href', '/')
   })
 
   it('links back home from the header', async () => {

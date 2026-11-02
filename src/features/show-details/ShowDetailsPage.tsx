@@ -4,6 +4,7 @@ import { useShowDetails } from '../../api/queries'
 import type { ShowDetails } from '../../api/schemas'
 import { ApiError } from '../../api/tvmazeClient'
 import { ErrorState } from '../../components/ErrorState'
+import { NotFound } from '../../components/NotFound'
 import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
 import { formatDate } from '../../lib/formatDate'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
@@ -118,13 +119,7 @@ function BackArrow() {
 
 function ShowNotFound() {
   return (
-    <div className="flex flex-col items-center gap-3 py-12 text-center">
-      <h1 className="text-2xl font-bold text-ink">Show not found</h1>
-      <p className="text-ink-muted">This show doesn’t exist or may have been removed.</p>
-      <Link to="/" className="text-accent underline hover:text-accent-strong">
-        Back to search
-      </Link>
-    </div>
+    <NotFound title="Show not found" message="This show doesn’t exist or may have been removed." />
   )
 }
 

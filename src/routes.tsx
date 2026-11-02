@@ -1,6 +1,6 @@
 import type { RouteObject } from 'react-router'
 import { Layout } from './components/Layout'
-import { NotFoundPage } from './components/NotFoundPage'
+import { NotFound } from './components/NotFound'
 import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import { SearchPage } from './features/search/SearchPage'
 import { ShowDetailsPage } from './features/show-details/ShowDetailsPage'
@@ -17,7 +17,10 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <SearchPage /> },
           { path: 'shows/:id', element: <ShowDetailsPage /> },
-          { path: '*', element: <NotFoundPage /> },
+          {
+            path: '*',
+            element: <NotFound title="Page not found" message="There’s nothing at this address." />,
+          },
         ],
       },
     ],
