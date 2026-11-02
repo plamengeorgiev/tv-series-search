@@ -7,6 +7,7 @@ import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
 import { searchResultsFixture } from '../../test/fixtures'
 import { renderWithProviders } from '../../test/renderWithProviders'
 import { server } from '../../test/server'
+import { setOnline } from '../../test/setOnline'
 import { SearchPage } from './SearchPage'
 
 const searchUrl = `${TVMAZE_BASE_URL}/search/shows`
@@ -199,5 +200,72 @@ describe('SearchPage on a slow connection', () => {
 
     expect(screen.getByText('Searching…')).toBeInTheDocument()
     expect(screen.queryByText('This is taking longer than usual…')).not.toBeInTheDocument()
+  })
+})
+
+describe('SearchPage while offline', () => {
+  const [domeResult, pilotResult] = searchResultsFixture
+
+  afterEach(() => {
+    setOnline(true)
+    vi.restoreAllMocks()
+  })
+
+  function recordSearches(resultsByQuery: Record<string, unknown[]>) {
+    const queries: (string | null)[] = []
+    server.use(
+      http.get(searchUrl, ({ request }) => {
+        const query = new URL(request.url).searchParams.get('q') ?? ''
+        queries.push(query)
+        return HttpResponse.json(resultsByQuery[query] ?? [])
+      }),
+    )
+    return queries
+  }
+
+  it('marks the previous results as out of date until the new search can run', async () => {
+    const queries = recordSearches({ dome: [domeResult], pilot: [pilotResult] })
+    const user = userEvent.setup()
+    renderSearchPage('/?q=dome')
+    await screen.findByRole('heading', { name: 'Under the Dome' })
+    setOnline(false)
+
+    const searchbox = screen.getByRole('searchbox', { name: 'Show name' })
+    await user.clear(searchbox)
+    await user.type(searchbox, 'pilot')
+
+    expect(
+      await screen.findByText(
+        'You’re offline. We’ll search for “pilot” when your connection is back.',
+      ),
+    ).toHaveAttribute('role', 'status')
+    // The old results stay usable, but are marked busy and dimmed.
+    expect(screen.getByRole('list').parentElement).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
+    expect(queries).toEqual(['dome'])
+
+    setOnline(true)
+
+    expect(await screen.findByRole('heading', { name: 'Unknown Pilot' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Under the Dome' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/We’ll search for/)).not.toBeInTheDocument()
+    expect(screen.getByRole('list').parentElement).toHaveAttribute('aria-busy', 'false')
+    expect(queries).toEqual(['dome', 'pilot'])
+  })
+
+  it('does not claim a new query has no results before it has been searched', async () => {
+    recordSearches({ pilot: [pilotResult] })
+    const user = userEvent.setup()
+    renderSearchPage('/?q=xyzzy')
+    await screen.findByText('No shows found for “xyzzy”.')
+    setOnline(false)
+
+    const searchbox = screen.getByRole('searchbox', { name: 'Show name' })
+    await user.clear(searchbox)
+    await user.type(searchbox, 'pilot')
+
+    expect(await screen.findByText(/We’ll search for “pilot”/)).toBeInTheDocument()
+    expect(screen.getByText('Searching…')).toBeInTheDocument()
+    expect(screen.queryByText(/No shows found/)).not.toBeInTheDocument()
   })
 })

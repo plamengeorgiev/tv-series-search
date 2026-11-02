@@ -18,6 +18,7 @@ export function SearchPage() {
   const {
     data: results,
     error,
+    fetchStatus,
     isFetching,
     isPending,
     isPlaceholderData,
@@ -32,6 +33,10 @@ export function SearchPage() {
   // - isFetching: a request is actually running. This leaves out the debounce window, when
   //   isPending is already true but nothing has been sent.
   const isLoadingResults = hasQuery && isFetching && (isPending || isPlaceholderData)
+  // React Query pauses requests while offline, so without this the old results would sit under
+  // the new query with nothing saying they're out of date.
+  const isWaitingForConnection =
+    hasQuery && fetchStatus === 'paused' && (isPending || isPlaceholderData)
 
   function renderResults() {
     if (!hasQuery) {
@@ -48,7 +53,10 @@ export function SearchPage() {
       )
     }
     // Also covers the debounce window, when the query is typed but not sent yet.
-    if (isPending) return <LoadingState message="Searching…" />
+    // An empty placeholder would claim the new query has no results before it has been searched.
+    if (isPending || (isPlaceholderData && results.length === 0)) {
+      return <LoadingState message="Searching…" />
+    }
     if (results.length === 0) {
       return (
         <p className="py-12 text-center text-gray-600">
@@ -56,7 +64,14 @@ export function SearchPage() {
         </p>
       )
     }
-    return <ShowList results={results} />
+    return (
+      <div
+        aria-busy={isPlaceholderData}
+        className={isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}
+      >
+        <ShowList results={results} />
+      </div>
+    )
   }
 
   function handleQueryChange(value: string) {
@@ -76,6 +91,14 @@ export function SearchPage() {
       <h1>Search TV shows</h1>
       <SearchInput value={query} onChange={handleQueryChange} />
       <SlowConnectionNotice isLoading={isLoadingResults} />
+      {isWaitingForConnection && (
+        <p
+          role="status"
+          className="rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-center text-sm text-gray-700"
+        >
+          You’re offline. We’ll search for “{debouncedQuery.trim()}” when your connection is back.
+        </p>
+      )}
       {renderResults()}
     </>
   )
