@@ -11,10 +11,10 @@ describe('App routes', () => {
     expect(screen.getByRole('heading', { name: 'Search TV shows' })).toBeInTheDocument()
   })
 
-  it('renders the show details page at /shows/:id', () => {
+  it('renders the show details page at /shows/:id', async () => {
     renderWithProviders(<App />, { route: '/shows/1' })
 
-    expect(screen.getByRole('heading', { name: 'Show 1' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
   })
 
   it('renders the not-found page for unknown URLs', () => {
