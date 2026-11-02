@@ -2,7 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import { createMemoryRouter, Outlet, RouterProvider, type RouteObject } from 'react-router'
-import { routes } from '../routes'
+import { routes } from '../app/routes'
 import { createTestQueryClient } from './createTestQueryClient'
 
 interface Options {

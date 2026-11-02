@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
 import { Notice } from '../../components/Notice'
+import { PageTitle } from '../../components/PageTitle'
 import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
 import { SearchInput } from './SearchInput'
 import { ShowList } from './ShowList'
@@ -27,6 +28,7 @@ export function SearchPage() {
 
   return (
     <>
+      <PageTitle title={searchedQuery ? `Results for “${searchedQuery}”` : undefined} />
       <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">Search TV shows</h1>
       <SearchInput value={query} onChange={handleQueryChange} />
       <SlowConnectionNotice isLoading={isLoading} />

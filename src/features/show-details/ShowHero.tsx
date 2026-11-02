@@ -21,17 +21,18 @@ function formatMetaLine(show: ShowDetails): string {
 
 export function ShowHero({ show }: ShowHeroProps) {
   const rating = show.rating.average
-  // The blurred backdrop is md: and up only, so light text is only needed there.
-  const hasBackdrop = show.image !== null
-  const onBackdrop = (base: string, backdrop: string) =>
-    hasBackdrop ? `${base} ${backdrop}` : base
-
   return (
-    <header className="relative isolate overflow-hidden rounded-2xl border border-line bg-surface-muted">
+    // data-backdrop switches the text to light colours. The blurred backdrop is md: and up only,
+    // so the md:group-data-backdrop/hero: classes below only apply there.
+    <header
+      data-backdrop={show.image ? '' : undefined}
+      className="group/hero relative isolate overflow-hidden rounded-2xl border border-line bg-surface-muted"
+    >
       {show.image && (
         <div aria-hidden="true" className="absolute inset-0 -z-10 hidden md:block">
+          {/* Blurred beyond recognition, so the small image is plenty. */}
           <img
-            src={show.image.original}
+            src={show.image.medium}
             alt=""
             className="size-full scale-110 object-cover blur-2xl"
           />
@@ -41,21 +42,18 @@ export function ShowHero({ show }: ShowHeroProps) {
 
       <div className="grid grid-cols-[auto_1fr] gap-4 p-4 md:gap-x-8 md:gap-y-5 md:p-8">
         <Poster
-          src={show.image?.original}
+          src={show.image?.medium}
+          srcSet={show.image ? `${show.image.medium} 1x, ${show.image.original} 2x` : undefined}
           alt={`${show.name} poster`}
+          loading="eager"
           className="w-28 rounded-xl bg-line text-sm shadow-xl md:row-span-2 md:w-56"
         />
 
         <div className="flex min-w-0 flex-col gap-2 self-center md:self-end">
-          <h1
-            className={onBackdrop(
-              'text-2xl font-bold tracking-tight text-ink sm:text-3xl md:text-4xl',
-              'md:text-white',
-            )}
-          >
+          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl md:text-4xl md:group-data-backdrop/hero:text-white">
             {show.name}
           </h1>
-          <p className={onBackdrop('text-sm text-ink-muted md:text-base', 'md:text-white/80')}>
+          <p className="text-sm text-ink-muted md:text-base md:group-data-backdrop/hero:text-white/80">
             {formatMetaLine(show)}
           </p>
         </div>
@@ -77,10 +75,7 @@ export function ShowHero({ show }: ShowHeroProps) {
               {show.genres.map((genre) => (
                 <li
                   key={genre}
-                  className={onBackdrop(
-                    'rounded-full border border-line bg-surface px-3 py-1 text-sm text-ink',
-                    'md:border-white/20 md:bg-white/10 md:text-white',
-                  )}
+                  className="rounded-full border border-line bg-surface px-3 py-1 text-sm text-ink md:group-data-backdrop/hero:border-white/20 md:group-data-backdrop/hero:bg-white/10 md:group-data-backdrop/hero:text-white"
                 >
                   {genre}
                 </li>

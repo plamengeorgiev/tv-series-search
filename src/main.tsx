@@ -5,7 +5,7 @@ import { createBrowserRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 import { createQueryClient } from './api/queryClient'
 import './index.css'
-import { routes } from './routes'
+import { routes } from './app/routes'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element #root not found')

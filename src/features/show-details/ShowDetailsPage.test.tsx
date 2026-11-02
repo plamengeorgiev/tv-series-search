@@ -46,9 +46,12 @@ describe('ShowDetailsPage', () => {
   it('shows the poster, genres, status, dates, network, language and rating', async () => {
     renderDetailsPage(1)
 
-    expect(await screen.findByRole('img', { name: 'Under the Dome poster' })).toHaveAttribute(
-      'src',
-      showFixture.image.original,
+    const poster = await screen.findByRole('img', { name: 'Under the Dome poster' })
+    // The small image by default, and the full-size one only for sharp screens.
+    expect(poster).toHaveAttribute('src', showFixture.image.medium)
+    expect(poster).toHaveAttribute(
+      'srcset',
+      `${showFixture.image.medium} 1x, ${showFixture.image.original} 2x`,
     )
     const genres = within(screen.getByRole('list', { name: 'Genres' })).getAllByRole('listitem')
     expect(genres.map((genre) => genre.textContent)).toEqual([

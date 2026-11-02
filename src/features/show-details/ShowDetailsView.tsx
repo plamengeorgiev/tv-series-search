@@ -1,4 +1,5 @@
 import type { ShowDetails } from '../../api/schemas'
+import { PageTitle } from '../../components/PageTitle'
 import { CastList } from './CastList'
 import { SeasonList } from './SeasonList'
 import { ShowFacts } from './ShowFacts'
@@ -13,6 +14,7 @@ interface ShowDetailsViewProps {
 export function ShowDetailsView({ show }: ShowDetailsViewProps) {
   return (
     <article className="flex flex-col gap-8">
+      <PageTitle title={show.name} />
       <ShowHero show={show} />
 
       {/* DOM order is summary, details, seasons, so the details card sits under the summary on

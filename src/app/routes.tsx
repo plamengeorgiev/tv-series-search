@@ -1,9 +1,9 @@
 import type { RouteObject } from 'react-router'
-import { Layout } from './components/Layout'
-import { NotFound } from './components/NotFound'
-import { RouteErrorBoundary } from './components/RouteErrorBoundary'
-import { SearchPage } from './features/search/SearchPage'
-import { ShowDetailsPage } from './features/show-details/ShowDetailsPage'
+import { Layout } from './Layout'
+import { NotFound } from '../components/NotFound'
+import { RouteErrorBoundary } from './RouteErrorBoundary'
+import { SearchPage } from '../features/search/SearchPage'
+import { ShowDetailsPage } from '../features/show-details/ShowDetailsPage'
 
 export const routes: RouteObject[] = [
   {
