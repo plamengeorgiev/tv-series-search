@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
+import App from '../../App'
 import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
 import { showDetailsFixture, showFixture } from '../../test/fixtures'
 import { renderWithProviders } from '../../test/renderWithProviders'
@@ -259,5 +260,58 @@ describe('ShowDetailsPage', () => {
     await user.click(screen.getByRole('button', { name: 'Retry' }))
 
     expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
+  })
+
+  it.each(['abc', '0', '-1', '1.5', '1e3', '12abc', '99999999999999999999'])(
+    'shows "Show not found" for the invalid id %s without calling the API',
+    async (id) => {
+      let requested = false
+      server.use(
+        http.get(showUrl, () => {
+          requested = true
+          return HttpResponse.json(showDetailsFixture)
+        }),
+      )
+      renderDetailsPage(id)
+
+      expect(await screen.findByRole('heading', { name: 'Show not found' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Back to search' })).toHaveAttribute('href', '/')
+      expect(requested).toBe(false)
+    },
+  )
+
+  it('shows "Show not found" when the API has no show with that id', async () => {
+    server.use(http.get(showUrl, () => new HttpResponse(null, { status: 404 })))
+    renderDetailsPage(123)
+
+    expect(await screen.findByRole('heading', { name: 'Show not found' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+  })
+})
+
+describe('deep links to show details', () => {
+  it('loads the show when the app starts on its URL, without visiting search first', async () => {
+    let searched = false
+    server.use(
+      http.get(`${TVMAZE_BASE_URL}/search/shows`, () => {
+        searched = true
+        return HttpResponse.json([])
+      }),
+    )
+    renderWithProviders(<App />, { route: '/shows/1' })
+
+    expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
+    expect(searched).toBe(false)
+  })
+
+  it('links back to search from a deep link to a missing show', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<App />, { route: '/shows/424242' })
+
+    await user.click(await screen.findByRole('link', { name: 'Back to search' }))
+
+    expect(screen.getByRole('heading', { name: 'Search TV shows' })).toBeInTheDocument()
   })
 })

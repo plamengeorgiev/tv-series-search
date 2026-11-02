@@ -1,6 +1,7 @@
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { useShowDetails } from '../../api/queries'
 import type { ShowDetails } from '../../api/schemas'
+import { ApiError } from '../../api/tvmazeClient'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
 import { formatDate } from '../../lib/formatDate'
@@ -8,10 +9,27 @@ import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { CastList } from './CastList'
 import { SeasonList } from './SeasonList'
 
+// Number() alone would accept ids like "1e3", " 7" or "0x10" and send them to the API.
+function parseShowId(id: string | undefined): number | null {
+  if (!id || !/^[1-9]\d*$/.test(id)) return null
+  const showId = Number(id)
+  return Number.isSafeInteger(showId) ? showId : null
+}
+
 export function ShowDetailsPage() {
   const { id } = useParams()
-  const { data: show, error, isPending, refetch } = useShowDetails(Number(id))
+  const showId = parseShowId(id)
 
+  // An id that can't exist isn't worth a request.
+  if (showId === null) return <ShowNotFound />
+
+  return <ShowDetailsLoader id={showId} />
+}
+
+function ShowDetailsLoader({ id }: { id: number }) {
+  const { data: show, error, isPending, refetch } = useShowDetails(id)
+
+  if (error instanceof ApiError && error.type === 'not-found') return <ShowNotFound />
   if (error) {
     return (
       <ErrorState
@@ -25,6 +43,18 @@ export function ShowDetailsPage() {
   if (isPending) return <LoadingState message="Loading show…" />
 
   return <ShowDetailsView show={show} />
+}
+
+function ShowNotFound() {
+  return (
+    <div className="flex flex-col items-center gap-3 py-12 text-center">
+      <h1 className="text-2xl font-bold text-gray-900">Show not found</h1>
+      <p className="text-gray-600">This show doesn’t exist or may have been removed.</p>
+      <Link to="/" className="text-blue-700 underline hover:text-blue-900">
+        Back to search
+      </Link>
+    </div>
+  )
 }
 
 function ShowDetailsView({ show }: { show: ShowDetails }) {
