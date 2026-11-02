@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { CastMember } from '../../api/schemas'
 
-// Long-running shows can list 100+ cast members. 12 fills whole rows at 2, 3 and 6 columns.
+// Long-running shows can list 100+ cast members. 12 fills whole rows at 2, 3, 4 and 6 columns.
 const INITIAL_CAST_COUNT = 12
 
 interface CastListProps {
@@ -21,30 +21,33 @@ export function CastList({ cast }: CastListProps) {
       {cast.length === 0 ? (
         <p className="text-ink-muted">No cast information available.</p>
       ) : (
-        <ul id="cast-list" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <ul
+          id="cast-list"
+          className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+        >
           {visibleCast.map(({ person, character }) => (
             // One person can play several characters, so neither id is unique on its own.
             <li
               key={`${String(person.id)}-${String(character.id)}`}
-              className="flex flex-col gap-1"
+              className="flex flex-col gap-0.5"
             >
               {person.image ? (
                 // The actor's name is right below the photo, so alt text would only repeat it.
                 <img
                   src={person.image.medium}
                   alt=""
-                  className="aspect-[210/295] w-full rounded object-cover"
+                  className="mb-1 aspect-[210/295] w-full rounded-lg object-cover shadow-sm"
                 />
               ) : (
                 <div
                   aria-hidden="true"
-                  className="flex aspect-[210/295] w-full items-center justify-center rounded bg-surface-muted text-xs text-ink-muted"
+                  className="mb-1 flex aspect-[210/295] w-full items-center justify-center rounded-lg bg-surface-muted text-xs text-ink-muted"
                 >
                   No image
                 </div>
               )}
-              <p className="text-sm font-medium text-ink">{person.name}</p>
-              <p className="text-sm text-ink-muted">as {character.name}</p>
+              <p className="text-sm leading-snug font-medium text-ink">{person.name}</p>
+              <p className="text-sm leading-snug text-ink-muted">as {character.name}</p>
             </li>
           ))}
         </ul>

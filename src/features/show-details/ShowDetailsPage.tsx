@@ -4,13 +4,14 @@ import { useShowDetails } from '../../api/queries'
 import type { ShowDetails } from '../../api/schemas'
 import { ApiError } from '../../api/tvmazeClient'
 import { ErrorState } from '../../components/ErrorState'
-import { LoadingState } from '../../components/LoadingState'
 import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
 import { formatDate } from '../../lib/formatDate'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { getSearchReturnState } from '../../lib/searchReturnState'
 import { CastList } from './CastList'
 import { SeasonList } from './SeasonList'
+import { ShowDetailsSkeleton } from './ShowDetailsSkeleton'
+import { ShowHero } from './ShowHero'
 
 // Number() alone would accept ids like "1e3", " 7" or "0x10" and send them to the API.
 function parseShowId(id: string | undefined): number | null {
@@ -46,7 +47,7 @@ function ShowDetailsLoader({ id }: { id: number }) {
         />
       )
     }
-    if (isPending) return <LoadingState message="Loading show…" />
+    if (isPending) return <ShowDetailsSkeleton />
     return <ShowDetailsView show={show} />
   }
 
@@ -109,89 +110,71 @@ function ShowNotFound() {
 
 function ShowDetailsView({ show }: { show: ShowDetails }) {
   const channel = show.network ?? show.webChannel
-  const rating = show.rating.average
 
   return (
-    <article className="flex flex-col gap-6">
-      {show.image ? (
-        <img
-          src={show.image.original}
-          alt={`${show.name} poster`}
-          className="aspect-[210/295] w-48 rounded-lg object-cover shadow"
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="flex aspect-[210/295] w-48 items-center justify-center rounded-lg bg-surface-muted text-sm text-ink-muted"
+    <article className="flex flex-col gap-8">
+      <ShowHero show={show} />
+
+      {/* DOM order is summary, details, seasons, so the details card sits under the summary on
+          phones. On lg: it moves into a sidebar column beside both. */}
+      <div className="grid gap-8 lg:grid-cols-3">
+        <section aria-labelledby="summary-heading" className="flex flex-col gap-3 lg:col-span-2">
+          <h2 id="summary-heading" className="text-xl font-semibold text-ink">
+            Summary
+          </h2>
+          {show.summary ? (
+            <div
+              className="flex max-w-prose flex-col gap-3 leading-relaxed text-ink"
+              // The summary is HTML from the API, so it's sanitized before rendering.
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(show.summary) }}
+            />
+          ) : (
+            <p className="text-ink-muted">No summary available.</p>
+          )}
+        </section>
+
+        <section
+          aria-labelledby="details-heading"
+          className="flex flex-col gap-3 self-start rounded-xl border border-line bg-surface p-5 shadow-sm lg:col-start-3 lg:row-span-2 lg:row-start-1"
         >
-          No image
+          <h2 id="details-heading" className="text-lg font-semibold text-ink">
+            Details
+          </h2>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+            <dt className="text-ink-muted">Status</dt>
+            <dd className="font-medium text-ink">{show.status}</dd>
+            {show.premiered && (
+              <>
+                <dt className="text-ink-muted">Premiered</dt>
+                <dd className="font-medium text-ink">{formatDate(show.premiered)}</dd>
+              </>
+            )}
+            {show.ended && (
+              <>
+                <dt className="text-ink-muted">Ended</dt>
+                <dd className="font-medium text-ink">{formatDate(show.ended)}</dd>
+              </>
+            )}
+            {channel && (
+              <>
+                <dt className="text-ink-muted">Network</dt>
+                <dd className="font-medium text-ink">{channel.name}</dd>
+              </>
+            )}
+            {show.language && (
+              <>
+                <dt className="text-ink-muted">Language</dt>
+                <dd className="font-medium text-ink">{show.language}</dd>
+              </>
+            )}
+          </dl>
+        </section>
+
+        <div className="lg:col-span-2">
+          <SeasonList seasons={show._embedded.seasons} />
         </div>
-      )}
-
-      <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold text-ink">{show.name}</h1>
-
-        {show.genres.length > 0 && (
-          <ul aria-label="Genres" className="flex flex-wrap gap-2">
-            {show.genres.map((genre) => (
-              <li
-                key={genre}
-                className="rounded-full bg-surface-muted px-3 py-1 text-sm text-ink-muted"
-              >
-                {genre}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-          <dt className="font-medium text-ink-muted">Status</dt>
-          <dd>{show.status}</dd>
-          {show.premiered && (
-            <>
-              <dt className="font-medium text-ink-muted">Premiered</dt>
-              <dd>{formatDate(show.premiered)}</dd>
-            </>
-          )}
-          {show.ended && (
-            <>
-              <dt className="font-medium text-ink-muted">Ended</dt>
-              <dd>{formatDate(show.ended)}</dd>
-            </>
-          )}
-          {channel && (
-            <>
-              <dt className="font-medium text-ink-muted">Network</dt>
-              <dd>{channel.name}</dd>
-            </>
-          )}
-          <dt className="font-medium text-ink-muted">Rating</dt>
-          <dd>{rating === null ? 'Not rated' : `${String(rating)} / 10`}</dd>
-        </dl>
-
-        {show.summary ? (
-          <div
-            className="flex flex-col gap-2 text-ink"
-            // The summary is HTML from the API, so it's sanitized before rendering.
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(show.summary) }}
-          />
-        ) : (
-          <p className="text-ink-muted">No summary available.</p>
-        )}
-
-        {show.officialSite && (
-          <a
-            href={show.officialSite}
-            target="_blank"
-            rel="noreferrer"
-            className="self-start text-accent underline hover:text-accent-strong"
-          >
-            Official site
-          </a>
-        )}
       </div>
 
-      <SeasonList seasons={show._embedded.seasons} />
       <CastList cast={show._embedded.cast} />
     </article>
   )

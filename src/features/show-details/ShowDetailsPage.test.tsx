@@ -22,6 +22,19 @@ function getDetail(term: string) {
   return screen.getByText(term, { selector: 'dt' }).nextElementSibling
 }
 
+// Each body row as [season, episodes, aired], skipping the column headers.
+function getSeasonRows(table: HTMLElement) {
+  return within(table)
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => [
+      within(row).getByRole('rowheader').textContent,
+      ...within(row)
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent),
+    ])
+}
+
 describe('ShowDetailsPage', () => {
   it('fetches the show from the id in the URL', async () => {
     renderDetailsPage(1)
@@ -29,7 +42,7 @@ describe('ShowDetailsPage', () => {
     expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
   })
 
-  it('shows the poster, genres, status, dates, network and rating', async () => {
+  it('shows the poster, genres, status, dates, network, language and rating', async () => {
     renderDetailsPage(1)
 
     expect(await screen.findByRole('img', { name: 'Under the Dome poster' })).toHaveAttribute(
@@ -46,7 +59,32 @@ describe('ShowDetailsPage', () => {
     expect(getDetail('Premiered')).toHaveTextContent('Jun 24, 2013')
     expect(getDetail('Ended')).toHaveTextContent('Sep 10, 2015')
     expect(getDetail('Network')).toHaveTextContent('CBS')
-    expect(getDetail('Rating')).toHaveTextContent('6.6 / 10')
+    expect(getDetail('Language')).toHaveTextContent('English')
+    expect(screen.getByText(/6\.6 \/ 10/)).toHaveTextContent('Rating: ★ 6.6 / 10')
+  })
+
+  it('sums up the years, status and network under the title', async () => {
+    renderDetailsPage(1)
+
+    expect(await screen.findByText('2013–2015 · Ended · CBS')).toBeInTheDocument()
+  })
+
+  it('leaves the end year open for a show still on air', async () => {
+    server.use(
+      http.get(showUrl, () =>
+        HttpResponse.json({
+          ...showDetailsFixture,
+          premiered: '2019-03-01',
+          ended: null,
+          status: 'Running',
+          network: null,
+          webChannel: { name: 'Netflix' },
+        }),
+      ),
+    )
+    renderDetailsPage(1)
+
+    expect(await screen.findByText('2019– · Running · Netflix')).toBeInTheDocument()
   })
 
   it('renders the summary as formatted text', async () => {
@@ -87,7 +125,9 @@ describe('ShowDetailsPage', () => {
     expect(screen.queryByRole('list', { name: 'Genres' })).not.toBeInTheDocument()
     expect(screen.queryByText('Premiered')).not.toBeInTheDocument()
     expect(screen.queryByText('Network')).not.toBeInTheDocument()
-    expect(getDetail('Rating')).toHaveTextContent('Not rated')
+    expect(screen.queryByText('Language')).not.toBeInTheDocument()
+    expect(getDetail('Status')).toHaveTextContent('Ended')
+    expect(screen.getByText('Not rated')).toBeInTheDocument()
     expect(screen.getByText('No summary available.')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Official site' })).not.toBeInTheDocument()
   })
@@ -111,15 +151,12 @@ describe('ShowDetailsPage', () => {
   it('lists the seasons with their episode counts and dates', async () => {
     renderDetailsPage(1)
 
-    const seasons = within(await screen.findByRole('region', { name: 'Seasons' })).getAllByRole(
-      'listitem',
-    )
-    expect(seasons).toHaveLength(3)
-    expect(seasons[0]).toHaveTextContent('Season 1')
-    expect(seasons[0]).toHaveTextContent('13 episodes · Jun 24, 2013 – Sep 16, 2013')
+    const rows = getSeasonRows(await screen.findByRole('table', { name: 'Seasons' }))
+    expect(rows).toHaveLength(3)
+    expect(rows[0]).toEqual(['Season 1', '13', 'Jun 24, 2013 – Sep 16, 2013'])
   })
 
-  it('shows season names and leaves out unknown details for upcoming seasons', async () => {
+  it('shows season names and marks unknown details for upcoming seasons', async () => {
     server.use(
       http.get(showUrl, () =>
         HttpResponse.json({
@@ -150,12 +187,12 @@ describe('ShowDetailsPage', () => {
     )
     renderDetailsPage(1)
 
-    expect(await screen.findByRole('heading', { name: 'Season 1: Book One' })).toBeInTheDocument()
-    expect(screen.getByText('1 episode · From Jan 5, 2025')).toBeInTheDocument()
-    // Season 2 has nothing known yet, so only its heading is rendered.
-    expect(screen.getByRole('heading', { name: 'Season 2' }).parentElement).toHaveTextContent(
-      /^Season 2$/,
-    )
+    const rows = getSeasonRows(await screen.findByRole('table', { name: 'Seasons' }))
+    expect(rows).toEqual([
+      ['Season 1: Book One', '1', 'From Jan 5, 2025'],
+      // Season 2 has nothing known yet. The dashes are hidden from screen readers.
+      ['Season 2', '—Not announced', '—Not announced'],
+    ])
   })
 
   it('lists the cast with the characters they play', async () => {
