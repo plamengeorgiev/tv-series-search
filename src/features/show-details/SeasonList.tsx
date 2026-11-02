@@ -4,6 +4,7 @@ import { DetailsSection } from './DetailsSection'
 
 interface SeasonListProps {
   seasons: Season[]
+  className?: string
 }
 
 function formatDateRange(premiereDate: string, endDate: string | null): string {
@@ -22,9 +23,9 @@ function NotAnnounced() {
   )
 }
 
-export function SeasonList({ seasons }: SeasonListProps) {
+export function SeasonList({ seasons, className }: SeasonListProps) {
   return (
-    <DetailsSection title="Seasons">
+    <DetailsSection title="Seasons" className={className}>
       {seasons.length === 0 ? (
         <p className="text-ink-muted">No season information available.</p>
       ) : (
