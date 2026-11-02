@@ -12,11 +12,20 @@ const channelSchema = z.object({
   name: z.string(),
 })
 
+// A malformed value becomes null, which the UI already shows as "not available", rather than
+// failing the whole response over one field.
+const dateSchema = z.iso.date().nullable().catch(null)
+// Rendered as a link, so only http(s) gets through: no javascript:, data: or other schemes.
+const webUrlSchema = z
+  .url({ protocol: /^https?$/ })
+  .nullable()
+  .catch(null)
+
 export const showSchema = z.object({
   id: z.number(),
   name: z.string(),
   genres: z.array(z.string()),
-  premiered: z.string().nullable(),
+  premiered: dateSchema,
   rating: z.object({ average: z.number().nullable() }),
   image: imageSchema.nullable(),
 })
@@ -38,16 +47,16 @@ export const seasonSchema = z.object({
   number: z.number(),
   name: z.string(),
   episodeOrder: z.number().nullable(),
-  premiereDate: z.string().nullable(),
-  endDate: z.string().nullable(),
+  premiereDate: dateSchema,
+  endDate: dateSchema,
 })
 
 export const showDetailsSchema = showSchema.extend({
   summary: z.string().nullable(),
   status: z.string(),
   language: z.string().nullable(),
-  ended: z.string().nullable(),
-  officialSite: z.string().nullable(),
+  ended: dateSchema,
+  officialSite: webUrlSchema,
   network: channelSchema.nullable(),
   webChannel: channelSchema.nullable(),
   // Only present because getShow requests it with embed[]=cast&embed[]=seasons.

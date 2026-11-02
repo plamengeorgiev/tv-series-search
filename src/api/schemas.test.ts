@@ -75,6 +75,30 @@ describe('showDetailsSchema', () => {
     expect(seasonSchema.safeParse(upcomingSeason).success).toBe(true)
   })
 
+  it.each(['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'not a url'])(
+    'drops an official site that is not an http(s) URL: %s',
+    (officialSite) => {
+      expect(showDetailsSchema.parse({ ...showDetailsFixture, officialSite }).officialSite).toBe(
+        null,
+      )
+    },
+  )
+
+  it('drops malformed dates instead of rejecting the show', () => {
+    const show = showDetailsSchema.parse({
+      ...showDetailsFixture,
+      premiered: '24/06/2013',
+      ended: 'soon',
+      _embedded: {
+        ...showDetailsFixture._embedded,
+        seasons: [{ ...showDetailsFixture._embedded.seasons[0], endDate: '2013-13-45' }],
+      },
+    })
+
+    expect(show).toMatchObject({ premiered: null, ended: null })
+    expect(show._embedded.seasons[0]).toMatchObject({ premiereDate: '2013-06-24', endDate: null })
+  })
+
   it('rejects a show without the embedded cast and seasons', () => {
     expect(showDetailsSchema.safeParse(showFixture).success).toBe(false)
   })
