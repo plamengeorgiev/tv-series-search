@@ -1,12 +1,34 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { renderWithProviders } from './test/renderWithProviders'
 import App from './App.tsx'
 
-describe('App', () => {
-  it('Checks for the correct title', () => {
-    render(<App />)
+describe('App routes', () => {
+  it('renders the search page at /', () => {
+    renderWithProviders(<App />)
 
-    const title = screen.getByText('TV series search app')
-    expect(title).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Search TV shows' })).toBeInTheDocument()
+  })
+
+  it('renders the show details page at /shows/:id', () => {
+    renderWithProviders(<App />, { route: '/shows/1' })
+
+    expect(screen.getByRole('heading', { name: 'Show 1' })).toBeInTheDocument()
+  })
+
+  it('renders the not-found page for unknown URLs', () => {
+    renderWithProviders(<App />, { route: '/no/such/page' })
+
+    expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
+  })
+
+  it('links back home from the header', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<App />, { route: '/shows/1' })
+
+    await user.click(screen.getByRole('link', { name: 'TV series search' }))
+
+    expect(screen.getByRole('heading', { name: 'Search TV shows' })).toBeInTheDocument()
   })
 })
