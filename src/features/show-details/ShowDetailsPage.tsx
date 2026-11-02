@@ -5,6 +5,7 @@ import type { ShowDetails } from '../../api/schemas'
 import { ApiError } from '../../api/tvmazeClient'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
+import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
 import { formatDate } from '../../lib/formatDate'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { getSearchReturnState } from '../../lib/searchReturnState'
@@ -52,6 +53,7 @@ function ShowDetailsLoader({ id }: { id: number }) {
   return (
     <div className="flex flex-col gap-4">
       <BackToResults />
+      <SlowConnectionNotice isLoading={isPending && !error} />
       {renderContent()}
     </div>
   )

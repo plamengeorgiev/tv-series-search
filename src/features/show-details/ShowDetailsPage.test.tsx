@@ -1,8 +1,8 @@
-import { screen, within } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
 import { useLocation } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from '../../App'
 import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
 import { showDetailsFixture, showFixture } from '../../test/fixtures'
@@ -248,6 +248,56 @@ describe('ShowDetailsPage', () => {
     renderDetailsPage(1)
 
     expect(await screen.findByText('Loading show…')).toHaveAttribute('role', 'status')
+  })
+
+  describe('on a slow connection', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('shows a notice once the show has taken over 3 seconds to load', async () => {
+      // shouldAdvanceTime keeps msw and Testing Library's polling running on real time too.
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      server.use(http.get(showUrl, () => delay('infinite')))
+      renderDetailsPage(1)
+      await screen.findByText('Loading show…')
+
+      act(() => {
+        vi.advanceTimersByTime(2500)
+      })
+      expect(screen.queryByText('This is taking longer than usual…')).not.toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(screen.getByText('This is taking longer than usual…')).toHaveAttribute(
+        'role',
+        'status',
+      )
+    })
+
+    it('hides the notice once the show arrives', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      server.use(
+        http.get(showUrl, async () => {
+          await delay(5000)
+          return HttpResponse.json(showDetailsFixture)
+        }),
+      )
+      renderDetailsPage(1)
+      await screen.findByText('Loading show…')
+
+      act(() => {
+        vi.advanceTimersByTime(3500)
+      })
+      expect(screen.getByText('This is taking longer than usual…')).toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(2000)
+      })
+      expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
+      expect(screen.queryByText('This is taking longer than usual…')).not.toBeInTheDocument()
+    })
   })
 
   it('shows an error with a Retry button that loads the show again', async () => {

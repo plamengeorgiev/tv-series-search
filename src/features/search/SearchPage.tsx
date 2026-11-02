@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router'
 import { useShowSearch } from '../../api/queries'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
+import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { SearchInput } from './SearchInput'
 import { ShowList } from './ShowList'
@@ -14,9 +15,23 @@ export function SearchPage() {
   const query = searchParams.get('q') ?? ''
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS)
 
-  const { data: results, error, isPending, refetch } = useShowSearch(debouncedQuery)
+  const {
+    data: results,
+    error,
+    isFetching,
+    isPending,
+    isPlaceholderData,
+    refetch,
+  } = useShowSearch(debouncedQuery)
   // keepPreviousData would otherwise keep showing the last results after the input is cleared.
   const hasQuery = query.trim() !== ''
+  // True while the results for the current query are still on their way:
+  // - isPending: the first search, when there are no results to show yet.
+  // - isPlaceholderData: a later search. keepPreviousData keeps the old results on screen,
+  //   which makes isPending false even though the new results haven't arrived.
+  // - isFetching: a request is actually running. This leaves out the debounce window, when
+  //   isPending is already true but nothing has been sent.
+  const isLoadingResults = hasQuery && isFetching && (isPending || isPlaceholderData)
 
   function renderResults() {
     if (!hasQuery) {
@@ -60,6 +75,7 @@ export function SearchPage() {
     <>
       <h1>Search TV shows</h1>
       <SearchInput value={query} onChange={handleQueryChange} />
+      <SlowConnectionNotice isLoading={isLoadingResults} />
       {renderResults()}
     </>
   )

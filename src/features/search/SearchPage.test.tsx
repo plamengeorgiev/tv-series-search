@@ -1,8 +1,8 @@
-import { screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
 import { useLocation } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
 import { searchResultsFixture } from '../../test/fixtures'
 import { renderWithProviders } from '../../test/renderWithProviders'
@@ -136,5 +136,68 @@ describe('SearchPage', () => {
     await waitFor(() => {
       expect(queries).toEqual(['dome'])
     })
+  })
+})
+
+describe('SearchPage on a slow connection', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows a notice once a search has taken over 3 seconds', async () => {
+    // shouldAdvanceTime keeps msw and Testing Library's polling running on real time too.
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    server.use(http.get(searchUrl, () => delay('infinite')))
+    renderSearchPage('/?q=dome')
+    await screen.findByText('Searching…')
+
+    act(() => {
+      vi.advanceTimersByTime(2500)
+    })
+    expect(screen.queryByText('This is taking longer than usual…')).not.toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(screen.getByText('This is taking longer than usual…')).toHaveAttribute('role', 'status')
+  })
+
+  it('hides the notice once the results arrive', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    server.use(
+      http.get(searchUrl, async () => {
+        await delay(5000)
+        return HttpResponse.json(searchResultsFixture)
+      }),
+    )
+    renderSearchPage('/?q=dome')
+    await screen.findByText('Searching…')
+
+    act(() => {
+      vi.advanceTimersByTime(3500)
+    })
+    expect(screen.getByText('This is taking longer than usual…')).toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
+    expect(screen.queryByText('This is taking longer than usual…')).not.toBeInTheDocument()
+  })
+
+  it('does not count the time spent typing', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    server.use(http.get(searchUrl, () => delay('infinite')))
+    // Each pause is shorter than the debounce, so no request starts during the 5s of typing.
+    const user = userEvent.setup({
+      delay: 250,
+      advanceTimers: (ms) => vi.advanceTimersByTime(ms),
+    })
+    renderSearchPage()
+
+    await user.type(screen.getByRole('searchbox', { name: 'Show name' }), 'battlestar galactica')
+
+    expect(screen.getByText('Searching…')).toBeInTheDocument()
+    expect(screen.queryByText('This is taking longer than usual…')).not.toBeInTheDocument()
   })
 })
