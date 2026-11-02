@@ -3,6 +3,7 @@ import { useShowDetails } from '../../api/queries'
 import { isApiError } from '../../api/tvmazeClient'
 import { ErrorState } from '../../components/ErrorState'
 import { NotFound } from '../../components/NotFound'
+import { Notice } from '../../components/Notice'
 import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
 import { BackToResults } from './BackToResults'
 import { ShowDetailsSkeleton } from './ShowDetailsSkeleton'
@@ -26,7 +27,10 @@ export function ShowDetailsPage() {
 }
 
 function ShowDetailsLoader({ id }: { id: number }) {
-  const { data: show, error, isPending, refetch } = useShowDetails(id)
+  const { data: show, error, fetchStatus, isPending, refetch } = useShowDetails(id)
+  // React Query pauses requests while offline. That isn't a slow load, so it gets its own notice.
+  const isLoading = isPending && fetchStatus === 'fetching'
+  const isWaitingForConnection = isPending && fetchStatus === 'paused'
 
   // "Show not found" has its own link back, so it doesn't get the back link above it.
   if (isApiError(error, 'not-found')) return <ShowNotFound />
@@ -49,7 +53,12 @@ function ShowDetailsLoader({ id }: { id: number }) {
   return (
     <div className="flex flex-col gap-4">
       <BackToResults />
-      <SlowConnectionNotice isLoading={isPending && !error} />
+      <SlowConnectionNotice isLoading={isLoading} />
+      {isWaitingForConnection && (
+        <Notice tone="neutral">
+          You’re offline. We’ll load this show when your connection is back.
+        </Notice>
+      )}
       {renderContent()}
     </div>
   )

@@ -7,6 +7,7 @@ import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
 import { showDetailsFixture, showFixture } from '../../test/fixtures'
 import { renderApp, renderWithProviders } from '../../test/renderWithProviders'
 import { server } from '../../test/server'
+import { setOnline } from '../../test/setOnline'
 import { ShowDetailsPage } from './ShowDetailsPage'
 
 const showUrl = `${TVMAZE_BASE_URL}/shows/:id`
@@ -333,6 +334,52 @@ describe('ShowDetailsPage', () => {
       })
       expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
       expect(screen.queryByText('This is taking longer than usual…')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('while offline', () => {
+    afterEach(() => {
+      setOnline(true)
+      vi.useRealTimers()
+      vi.restoreAllMocks()
+    })
+
+    it('waits for the connection instead of reporting a slow load', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      let requests = 0
+      server.use(
+        http.get(showUrl, () => {
+          requests++
+          return HttpResponse.json(showDetailsFixture)
+        }),
+      )
+      const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) })
+      renderApp('/?q=dome')
+      const showLink = await screen.findByRole('link', { name: /Under the Dome/ })
+
+      // Going offline after the results load, as a user would, since React Query only hears
+      // the offline event once its client is mounted.
+      setOnline(false)
+      await user.click(showLink)
+
+      expect(
+        await screen.findByText(
+          'You’re offline. We’ll load this show when your connection is back.',
+        ),
+      ).toHaveAttribute('role', 'status')
+      expect(screen.getByText('Loading show…')).toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(3500)
+      })
+      expect(screen.queryByText('This is taking longer than usual…')).not.toBeInTheDocument()
+      expect(requests).toBe(0)
+
+      setOnline(true)
+
+      expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
+      expect(screen.queryByText(/You’re offline/)).not.toBeInTheDocument()
+      expect(requests).toBe(1)
     })
   })
 
