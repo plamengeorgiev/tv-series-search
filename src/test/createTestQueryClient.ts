@@ -4,8 +4,8 @@ import { createQueryClient } from '../api/queryClient'
 export function createTestQueryClient() {
   return createQueryClient({
     defaultOptions: {
-      // Queries with their own retry policy still retry, but without the backoff delay.
-      queries: { retry: false, retryDelay: 0 },
+      // Keeps the app's retry policy, but without the backoff delay.
+      queries: { retryDelay: 0 },
     },
   })
 }

@@ -1,13 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { getShow, isApiError, searchShows, type ApiErrorType } from './tvmazeClient'
+import { getShow, searchShows } from './tvmazeClient'
 
-const MAX_RETRIES = 3
-// Other errors (404s, bad data) would fail the same way on every attempt.
-const retryableErrorTypes: ApiErrorType[] = ['network', 'rate-limited', 'server']
-
-function retryTransientErrors(failureCount: number, error: Error): boolean {
-  return failureCount < MAX_RETRIES && isApiError(error, ...retryableErrorTypes)
-}
+// Retries and caching are app-wide defaults, set in createQueryClient.
 
 export const showKeys = {
   all: ['shows'] as const,
@@ -24,7 +18,6 @@ export function useShowSearch(query: string) {
     enabled: trimmedQuery !== '',
     // Keeps the old results on screen while the next search loads, instead of flashing a spinner.
     placeholderData: keepPreviousData,
-    retry: retryTransientErrors,
   })
 }
 
@@ -32,6 +25,5 @@ export function useShowDetails(id: number) {
   return useQuery({
     queryKey: showKeys.details(id),
     queryFn: ({ signal }) => getShow(id, signal),
-    retry: retryTransientErrors,
   })
 }

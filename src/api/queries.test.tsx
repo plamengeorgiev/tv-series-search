@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
 import { createTestQueryClient } from '../test/createTestQueryClient'
+import { showDetailsFixture } from '../test/fixtures'
 import { server } from '../test/server'
 import { useShowDetails, useShowSearch } from './queries'
 import { ApiError, TVMAZE_BASE_URL } from './tvmazeClient'
@@ -76,6 +77,22 @@ describe('useShowDetails', () => {
       expect(result.current.isSuccess).toBe(true)
     })
     expect(result.current.data).toMatchObject({ id: 1, name: 'Under the Dome' })
+  })
+
+  it('reuses a recently fetched show instead of requesting it again', async () => {
+    const requests = countRequests(showUrl, () => HttpResponse.json(showDetailsFixture))
+    const wrapper = createWrapper()
+    const first = renderHook(() => useShowDetails(1), { wrapper })
+    await waitFor(() => {
+      expect(first.result.current.isSuccess).toBe(true)
+    })
+    first.unmount()
+
+    const { result } = renderHook(() => useShowDetails(1), { wrapper })
+
+    expect(result.current.data).toMatchObject({ name: 'Under the Dome' })
+    expect(result.current.isFetching).toBe(false)
+    expect(requests.count).toBe(1)
   })
 
   it('exposes the ApiError when the request fails', async () => {
