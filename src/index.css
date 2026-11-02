@@ -106,3 +106,14 @@
     );
   background-repeat: no-repeat;
 }
+
+/* The keyboard focus outline for links and buttons. */
+@utility focus-ring {
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* A bordered button on the page surface, for secondary actions. Padding and layout stay with the
+   call site, since they vary. */
+@utility btn-secondary {
+  @apply focus-ring rounded-lg border border-line bg-surface text-sm font-medium text-ink shadow-sm transition hover:border-line-strong hover:bg-surface-muted;
+}

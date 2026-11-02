@@ -1,4 +1,5 @@
 import { useDelayedFlag } from '../hooks/useDelayedFlag'
+import { Notice } from './Notice'
 
 // Most TVmaze responses arrive well under a second, so 3s means something is off.
 const SLOW_REQUEST_MS = 3000
@@ -12,12 +13,5 @@ export function SlowConnectionNotice({ isLoading }: SlowConnectionNoticeProps) {
 
   if (!isSlow) return null
 
-  return (
-    <p
-      role="status"
-      className="rounded-md border border-warning-line bg-warning-surface px-4 py-2 text-center text-sm text-warning-ink"
-    >
-      This is taking longer than usual…
-    </p>
-  )
+  return <Notice tone="warning">This is taking longer than usual…</Notice>
 }

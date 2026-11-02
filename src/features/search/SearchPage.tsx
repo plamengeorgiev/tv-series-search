@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { useShowSearch } from '../../api/queries'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
+import { Notice } from '../../components/Notice'
 import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { SearchInput } from './SearchInput'
@@ -40,9 +42,7 @@ export function SearchPage() {
 
   function renderResults() {
     if (!hasQuery) {
-      return (
-        <p className="py-12 text-center text-ink-muted">Type a show name to start searching.</p>
-      )
+      return <ResultsMessage>Type a show name to start searching.</ResultsMessage>
     }
     if (error) {
       return (
@@ -60,11 +60,7 @@ export function SearchPage() {
       return <LoadingState message="Searching…" />
     }
     if (results.length === 0) {
-      return (
-        <p className="py-12 text-center text-ink-muted">
-          No shows found for “{debouncedQuery.trim()}”.
-        </p>
-      )
+      return <ResultsMessage>No shows found for “{debouncedQuery.trim()}”.</ResultsMessage>
     }
     return (
       <div
@@ -94,14 +90,15 @@ export function SearchPage() {
       <SearchInput value={query} onChange={handleQueryChange} />
       <SlowConnectionNotice isLoading={isLoadingResults} />
       {isWaitingForConnection && (
-        <p
-          role="status"
-          className="rounded-md border border-line bg-surface-muted px-4 py-2 text-center text-sm text-ink-muted"
-        >
+        <Notice tone="neutral">
           You’re offline. We’ll search for “{debouncedQuery.trim()}” when your connection is back.
-        </p>
+        </Notice>
       )}
       {renderResults()}
     </>
   )
+}
+
+function ResultsMessage({ children }: { children: ReactNode }) {
+  return <p className="py-12 text-center text-ink-muted">{children}</p>
 }

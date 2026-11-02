@@ -1,5 +1,6 @@
 import type { Season } from '../../api/schemas'
 import { formatDate } from '../../lib/formatDate'
+import { DetailsSection } from './DetailsSection'
 
 interface SeasonListProps {
   seasons: Season[]
@@ -23,15 +24,14 @@ function NotAnnounced() {
 
 export function SeasonList({ seasons }: SeasonListProps) {
   return (
-    <section aria-labelledby="seasons-heading" className="flex flex-col gap-3">
-      <h2 id="seasons-heading" className="text-xl font-semibold text-ink">
-        Seasons
-      </h2>
+    <DetailsSection title="Seasons">
       {seasons.length === 0 ? (
         <p className="text-ink-muted">No season information available.</p>
       ) : (
         <div className="overflow-hidden rounded-lg border border-line">
-          <table aria-labelledby="seasons-heading" className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm">
+            {/* The visible section heading already says this, so the caption is for screen readers. */}
+            <caption className="sr-only">Seasons</caption>
             <thead className="bg-surface-muted text-xs tracking-wide text-ink-muted uppercase">
               <tr>
                 <th scope="col" className="px-4 py-2 font-medium">
@@ -65,6 +65,6 @@ export function SeasonList({ seasons }: SeasonListProps) {
           </table>
         </div>
       )}
-    </section>
+    </DetailsSection>
   )
 }

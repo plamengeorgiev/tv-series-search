@@ -1,4 +1,5 @@
 import type { ShowDetails } from '../../api/schemas'
+import { Poster } from '../../components/Poster'
 
 interface ShowHeroProps {
   show: ShowDetails
@@ -37,20 +38,11 @@ export function ShowHero({ show }: ShowHeroProps) {
       )}
 
       <div className="grid grid-cols-[auto_1fr] gap-4 p-4 md:gap-x-8 md:gap-y-5 md:p-8">
-        {show.image ? (
-          <img
-            src={show.image.original}
-            alt={`${show.name} poster`}
-            className="aspect-[210/295] w-28 rounded-xl object-cover shadow-xl md:row-span-2 md:w-56"
-          />
-        ) : (
-          <div
-            aria-hidden="true"
-            className="flex aspect-[210/295] w-28 items-center justify-center rounded-xl bg-line text-sm text-ink-muted shadow-xl md:row-span-2 md:w-56"
-          >
-            No image
-          </div>
-        )}
+        <Poster
+          src={show.image?.original}
+          alt={`${show.name} poster`}
+          className="w-28 rounded-xl bg-line text-sm shadow-xl md:row-span-2 md:w-56"
+        />
 
         <div className="flex min-w-0 flex-col gap-2 self-center md:self-end">
           <h1
@@ -99,7 +91,7 @@ export function ShowHero({ show }: ShowHeroProps) {
               href={show.officialSite}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-on-accent shadow-sm hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="focus-ring inline-flex items-center gap-1 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-on-accent shadow-sm hover:bg-accent-strong"
             >
               Official site<span aria-hidden="true">↗</span>
             </a>

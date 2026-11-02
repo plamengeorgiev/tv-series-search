@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import { Fragment, type MouseEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { useShowDetails } from '../../api/queries'
 import type { ShowDetails } from '../../api/schemas'
@@ -10,6 +10,7 @@ import { formatDate } from '../../lib/formatDate'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { getSearchReturnState } from '../../lib/searchReturnState'
 import { CastList } from './CastList'
+import { DetailsSection } from './DetailsSection'
 import { SeasonList } from './SeasonList'
 import { ShowDetailsSkeleton } from './ShowDetailsSkeleton'
 import { ShowHero } from './ShowHero'
@@ -65,8 +66,7 @@ function BackToResults() {
   const location = useLocation()
   const navigate = useNavigate()
   const returnState = getSearchReturnState(location.state)
-  const className =
-    'inline-flex items-center gap-1.5 self-start rounded-lg border border-line bg-surface py-1.5 pr-3 pl-2 text-sm font-medium text-ink shadow-sm transition hover:border-line-strong hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+  const className = 'btn-secondary inline-flex items-center gap-1.5 self-start py-1.5 pr-3 pl-2'
 
   // Deep links and refreshes have no search to return to.
   if (!returnState) {
@@ -125,6 +125,13 @@ function ShowNotFound() {
 
 function ShowDetailsView({ show }: { show: ShowDetails }) {
   const channel = show.network ?? show.webChannel
+  const facts: [label: string, value: string | null][] = [
+    ['Status', show.status],
+    ['Premiered', show.premiered && formatDate(show.premiered)],
+    ['Ended', show.ended && formatDate(show.ended)],
+    ['Network', channel?.name ?? null],
+    ['Language', show.language],
+  ]
 
   return (
     <article className="flex flex-col gap-8">
@@ -133,10 +140,7 @@ function ShowDetailsView({ show }: { show: ShowDetails }) {
       {/* DOM order is summary, details, seasons, so the details card sits under the summary on
           phones. On lg: it moves into a sidebar column beside both. */}
       <div className="grid gap-8 lg:grid-cols-3">
-        <section aria-labelledby="summary-heading" className="flex flex-col gap-3 lg:col-span-2">
-          <h2 id="summary-heading" className="text-xl font-semibold text-ink">
-            Summary
-          </h2>
+        <DetailsSection title="Summary" className="lg:col-span-2">
           {show.summary ? (
             <div
               className="flex max-w-prose flex-col gap-3 leading-relaxed text-ink"
@@ -146,44 +150,25 @@ function ShowDetailsView({ show }: { show: ShowDetails }) {
           ) : (
             <p className="text-ink-muted">No summary available.</p>
           )}
-        </section>
+        </DetailsSection>
 
-        <section
-          aria-labelledby="details-heading"
-          className="flex flex-col gap-3 self-start rounded-xl border border-line bg-surface p-5 shadow-sm lg:col-start-3 lg:row-span-2 lg:row-start-1"
+        <DetailsSection
+          title="Details"
+          variant="card"
+          className="self-start lg:col-start-3 lg:row-span-2 lg:row-start-1"
         >
-          <h2 id="details-heading" className="text-lg font-semibold text-ink">
-            Details
-          </h2>
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-            <dt className="text-ink-muted">Status</dt>
-            <dd className="font-medium text-ink">{show.status}</dd>
-            {show.premiered && (
-              <>
-                <dt className="text-ink-muted">Premiered</dt>
-                <dd className="font-medium text-ink">{formatDate(show.premiered)}</dd>
-              </>
-            )}
-            {show.ended && (
-              <>
-                <dt className="text-ink-muted">Ended</dt>
-                <dd className="font-medium text-ink">{formatDate(show.ended)}</dd>
-              </>
-            )}
-            {channel && (
-              <>
-                <dt className="text-ink-muted">Network</dt>
-                <dd className="font-medium text-ink">{channel.name}</dd>
-              </>
-            )}
-            {show.language && (
-              <>
-                <dt className="text-ink-muted">Language</dt>
-                <dd className="font-medium text-ink">{show.language}</dd>
-              </>
+            {facts.map(
+              ([label, value]) =>
+                value && (
+                  <Fragment key={label}>
+                    <dt className="text-ink-muted">{label}</dt>
+                    <dd className="font-medium text-ink">{value}</dd>
+                  </Fragment>
+                ),
             )}
           </dl>
-        </section>
+        </DetailsSection>
 
         <div className="lg:col-span-2">
           <SeasonList seasons={show._embedded.seasons} />

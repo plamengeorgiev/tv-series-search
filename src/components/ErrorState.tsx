@@ -1,4 +1,5 @@
 import { ApiError } from '../api/tvmazeClient'
+import { ErrorPanel } from './ErrorPanel'
 
 interface ErrorStateProps {
   error: Error
@@ -17,20 +18,5 @@ function describeError(error: Error): string {
 }
 
 export function ErrorState({ error, onRetry }: ErrorStateProps) {
-  return (
-    <div
-      role="alert"
-      className="flex flex-col items-center gap-3 rounded-lg border border-danger-line bg-danger-surface px-4 py-8 text-center"
-    >
-      <p className="font-semibold text-danger-ink">Something went wrong</p>
-      <p className="text-sm text-danger-ink">{describeError(error)}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-on-danger hover:bg-danger-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
-      >
-        Retry
-      </button>
-    </div>
-  )
+  return <ErrorPanel message={describeError(error)} actionLabel="Retry" onAction={onRetry} />
 }
