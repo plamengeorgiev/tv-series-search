@@ -1,76 +1,17 @@
 import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
-import { useShowSearch } from '../../api/queries'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
 import { Notice } from '../../components/Notice'
 import { SlowConnectionNotice } from '../../components/SlowConnectionNotice'
-import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { SearchInput } from './SearchInput'
 import { ShowList } from './ShowList'
-
-// Long enough to skip intermediate keystrokes, which keeps us under TVmaze's rate limit.
-const SEARCH_DEBOUNCE_MS = 300
+import { useSearchResults, type SearchResultsView } from './useSearchResults'
 
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') ?? ''
-  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS)
-
-  const {
-    data: results,
-    error,
-    fetchStatus,
-    isFetching,
-    isPending,
-    isPlaceholderData,
-    refetch,
-  } = useShowSearch(debouncedQuery)
-  // keepPreviousData would otherwise keep showing the last results after the input is cleared.
-  const hasQuery = query.trim() !== ''
-  // True while the results for the current query are still on their way:
-  // - isPending: the first search, when there are no results to show yet.
-  // - isPlaceholderData: a later search. keepPreviousData keeps the old results on screen,
-  //   which makes isPending false even though the new results haven't arrived.
-  // - isFetching: a request is actually running. This leaves out the debounce window, when
-  //   isPending is already true but nothing has been sent.
-  const isLoadingResults = hasQuery && isFetching && (isPending || isPlaceholderData)
-  // React Query pauses requests while offline, so without this the old results would sit under
-  // the new query with nothing saying they're out of date.
-  const isWaitingForConnection =
-    hasQuery && fetchStatus === 'paused' && (isPending || isPlaceholderData)
-
-  function renderResults() {
-    if (!hasQuery) {
-      return <ResultsMessage>Type a show name to start searching.</ResultsMessage>
-    }
-    if (error) {
-      return (
-        <ErrorState
-          error={error}
-          onRetry={() => {
-            void refetch()
-          }}
-        />
-      )
-    }
-    // Also covers the debounce window, when the query is typed but not sent yet.
-    // An empty placeholder would claim the new query has no results before it has been searched.
-    if (isPending || (isPlaceholderData && results.length === 0)) {
-      return <LoadingState message="Searching…" />
-    }
-    if (results.length === 0) {
-      return <ResultsMessage>No shows found for “{debouncedQuery.trim()}”.</ResultsMessage>
-    }
-    return (
-      <div
-        aria-busy={isPlaceholderData}
-        className={isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}
-      >
-        <ShowList results={results} />
-      </div>
-    )
-  }
+  const { searchedQuery, view, isLoading, isWaitingForConnection } = useSearchResults(query)
 
   function handleQueryChange(value: string) {
     setSearchParams(
@@ -88,15 +29,42 @@ export function SearchPage() {
     <>
       <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">Search TV shows</h1>
       <SearchInput value={query} onChange={handleQueryChange} />
-      <SlowConnectionNotice isLoading={isLoadingResults} />
+      <SlowConnectionNotice isLoading={isLoading} />
       {isWaitingForConnection && (
         <Notice tone="neutral">
-          You’re offline. We’ll search for “{debouncedQuery.trim()}” when your connection is back.
+          You’re offline. We’ll search for “{searchedQuery}” when your connection is back.
         </Notice>
       )}
-      {renderResults()}
+      <SearchResults view={view} searchedQuery={searchedQuery} />
     </>
   )
+}
+
+interface SearchResultsProps {
+  view: SearchResultsView
+  searchedQuery: string
+}
+
+function SearchResults({ view, searchedQuery }: SearchResultsProps) {
+  switch (view.status) {
+    case 'idle':
+      return <ResultsMessage>Type a show name to start searching.</ResultsMessage>
+    case 'error':
+      return <ErrorState error={view.error} onRetry={view.retry} />
+    case 'loading':
+      return <LoadingState message="Searching…" />
+    case 'empty':
+      return <ResultsMessage>No shows found for “{searchedQuery}”.</ResultsMessage>
+    case 'results':
+      return (
+        <div
+          aria-busy={view.isStale}
+          className={view.isStale ? 'opacity-60 transition-opacity' : 'transition-opacity'}
+        >
+          <ShowList results={view.results} />
+        </div>
+      )
+  }
 }
 
 function ResultsMessage({ children }: { children: ReactNode }) {
