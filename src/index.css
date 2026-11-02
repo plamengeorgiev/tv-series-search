@@ -44,6 +44,8 @@
 @layer base {
   :root {
     color-scheme: light dark;
+    /* Keeps the centred layout from shifting sideways when a page grows tall enough to scroll. */
+    scrollbar-gutter: stable;
 
     @variant sm {
       --spacing-gutter: 1.5rem;
@@ -86,4 +88,21 @@
   body {
     @apply bg-canvas font-sans text-ink antialiased;
   }
+}
+
+/* A faint accent glow at the top of the page, so wide screens don't look empty and the cards and
+   details hero stand out from the background. Built from tokens, so it follows the theme. */
+@utility bg-glow {
+  background-image:
+    radial-gradient(
+      60rem 28rem at 10% -6rem,
+      color-mix(in oklab, var(--color-accent) 12%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      48rem 24rem at 95% -4rem,
+      color-mix(in oklab, var(--color-rating) 10%, transparent),
+      transparent 70%
+    );
+  background-repeat: no-repeat;
 }

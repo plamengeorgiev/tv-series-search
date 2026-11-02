@@ -60,7 +60,7 @@ export function CastList({ cast }: CastListProps) {
           onClick={() => {
             setShowAll((current) => !current)
           }}
-          className="self-start rounded border border-line-strong px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="self-start rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink shadow-sm transition hover:border-line-strong hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {showAll ? 'Show fewer' : `Show all ${String(cast.length)} cast members`}
         </button>

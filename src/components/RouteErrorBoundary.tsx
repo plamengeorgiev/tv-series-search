@@ -17,7 +17,7 @@ export function RouteErrorBoundary() {
     >
       <h1 className="font-semibold text-danger-ink">Something went wrong</h1>
       <p className="text-sm text-danger-ink">
-        An unexpected error occurred. Try reloading the page, or go back to search.
+        An unexpected error occurred. Try reloading the page or go back to search.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <button

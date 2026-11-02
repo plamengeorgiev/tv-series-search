@@ -64,13 +64,15 @@ function BackToResults() {
   const location = useLocation()
   const navigate = useNavigate()
   const returnState = getSearchReturnState(location.state)
-  const className = 'self-start text-accent underline hover:text-accent-strong'
+  const className =
+    'inline-flex items-center gap-1.5 self-start rounded-lg border border-line bg-surface py-1.5 pr-3 pl-2 text-sm font-medium text-ink shadow-sm transition hover:border-line-strong hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
   // Deep links and refreshes have no search to return to.
   if (!returnState) {
     return (
       <Link to="/" className={className}>
-        <span aria-hidden="true">← </span>Back to search
+        <BackArrow />
+        Back to search
       </Link>
     )
   }
@@ -91,8 +93,26 @@ function BackToResults() {
       onClick={handleClick}
       className={className}
     >
-      <span aria-hidden="true">← </span>Back to results
+      <BackArrow />
+      Back to results
     </Link>
+  )
+}
+
+function BackArrow() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      className="size-4 text-ink-muted"
+    >
+      <path
+        fillRule="evenodd"
+        d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"
+        clipRule="evenodd"
+      />
+    </svg>
   )
 }
 
