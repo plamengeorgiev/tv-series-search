@@ -2,10 +2,9 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import App from '../App'
 import { TVMAZE_BASE_URL } from '../api/tvmazeClient'
 import { searchResultsFixture } from '../test/fixtures'
-import { renderWithProviders } from '../test/renderWithProviders'
+import { renderApp } from '../test/renderWithProviders'
 import { server } from '../test/server'
 import { setOnline } from '../test/setOnline'
 
@@ -18,13 +17,13 @@ describe('OfflineBanner', () => {
   })
 
   it('is hidden while online', () => {
-    renderWithProviders(<App />)
+    renderApp()
 
     expect(screen.queryByText(offlineMessage)).not.toBeInTheDocument()
   })
 
   it('appears when the connection drops and goes away when it returns', () => {
-    renderWithProviders(<App />)
+    renderApp()
 
     setOnline(false)
     expect(screen.getByText(offlineMessage)).toHaveAttribute('role', 'status')
@@ -34,7 +33,7 @@ describe('OfflineBanner', () => {
   })
 
   it('shows on every page', () => {
-    renderWithProviders(<App />, { route: '/no/such/page' })
+    renderApp('/no/such/page')
 
     setOnline(false)
 
@@ -50,7 +49,7 @@ describe('OfflineBanner', () => {
       }),
     )
     const user = userEvent.setup()
-    renderWithProviders(<App />)
+    renderApp()
     // React Query only hears about the connection once its provider has mounted.
     setOnline(false)
 

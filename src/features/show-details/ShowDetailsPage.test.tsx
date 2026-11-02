@@ -3,10 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
 import { useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import App from '../../App'
 import { TVMAZE_BASE_URL } from '../../api/tvmazeClient'
 import { showDetailsFixture, showFixture } from '../../test/fixtures'
-import { renderWithProviders } from '../../test/renderWithProviders'
+import { renderApp, renderWithProviders } from '../../test/renderWithProviders'
 import { server } from '../../test/server'
 import { ShowDetailsPage } from './ShowDetailsPage'
 
@@ -350,7 +349,7 @@ describe('deep links to show details', () => {
         return HttpResponse.json([])
       }),
     )
-    renderWithProviders(<App />, { route: '/shows/1' })
+    renderApp('/shows/1')
 
     expect(await screen.findByRole('heading', { name: 'Under the Dome' })).toBeInTheDocument()
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
@@ -359,7 +358,7 @@ describe('deep links to show details', () => {
 
   it('links back to search from a deep link to a missing show', async () => {
     const user = userEvent.setup()
-    renderWithProviders(<App />, { route: '/shows/424242' })
+    renderApp('/shows/424242')
 
     await screen.findByRole('heading', { name: 'Show not found' })
     await user.click(screen.getByRole('link', { name: 'Back to search' }))
@@ -378,19 +377,13 @@ describe('back-to-results navigation', () => {
     )
   }
 
-  function renderApp(route: string) {
-    return renderWithProviders(
-      <>
-        <App />
-        <LocationProbe />
-      </>,
-      { route },
-    )
+  function renderAppWithProbe(route: string) {
+    return renderApp(route, <LocationProbe />)
   }
 
   it('goes back through history to the same search results', async () => {
     const user = userEvent.setup()
-    renderApp('/?q=dome')
+    renderAppWithProbe('/?q=dome')
     const searchKey = screen.getByTestId('location').dataset.key
 
     await user.click(await screen.findByRole('link', { name: /Under the Dome/ }))
@@ -407,7 +400,7 @@ describe('back-to-results navigation', () => {
   it('shows the back link while the show is loading', async () => {
     server.use(http.get(showUrl, () => delay('infinite')))
     const user = userEvent.setup()
-    renderApp('/?q=dome')
+    renderAppWithProbe('/?q=dome')
 
     await user.click(await screen.findByRole('link', { name: /Under the Dome/ }))
 
@@ -417,7 +410,7 @@ describe('back-to-results navigation', () => {
 
   it('links to search when the details page was opened directly', async () => {
     const user = userEvent.setup()
-    renderApp('/shows/1')
+    renderAppWithProbe('/shows/1')
 
     await screen.findByRole('heading', { name: 'Under the Dome' })
     const backLink = screen.getByRole('link', { name: 'Back to search' })
